@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чебуречная У Мартина</title>
+    <script src="/telegram-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --radius: 12px;
+            --bg: var(--tg-theme-bg-color, #ffffff);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #f4f4f7);
+            --text: var(--tg-theme-text-color, #000000);
+            --hint: var(--tg-theme-hint-color, #999999);
+            --link: var(--tg-theme-link-color, #248bcf);
+            --button: var(--tg-theme-button-color, #3390ec);
+            --button-text: var(--tg-theme-button-text-color, #ffffff);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--secondary-bg);
+            color: var(--text);
+            padding: 16px;
+            margin: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        h2 { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+        h3 { font-size: 18px; font-weight: 600; margin-top: 24px; }
+
+        .section { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .location-card {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .location-card:active { transform: scale(0.98); }
+        .location-card b { display: block; font-size: 17px; margin-bottom: 4px; }
+        .location-card span { color: var(--hint); font-size: 14px; }
+        .location-card.disabled { opacity: 0.6; cursor: not-allowed; grayscale: 1; }
+        .location-card.disabled .status-tag { color: #eb5757; }
+
+        .category-pill {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--bg);
+            border-radius: 20px;
+            margin: 0 8px 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--button);
+            border: 1px solid var(--button);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .item-card {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        }
+        .item-info { flex-grow: 1; }
+        .item-info h4 { margin: 0 0 4px 0; font-size: 16px; }
+        .item-info span { font-weight: 600; color: var(--button); }
+        
+        .add-btn {
+            background: var(--secondary-bg);
+            color: var(--button);
+            border: none;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .cart-item {
+            background: var(--secondary-bg);
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-back {
+            background: none;
+            border: none;
+            color: var(--link);
+            font-weight: 500;
+            padding: 8px 0;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-section {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .hidden { display: none !important; }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--secondary-bg);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+        }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 1000; overflow-y: auto; padding: 20px; }
+        .addon-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; align-items: center;}
+        .modal-btn { width: 100%; padding: 16px; background: var(--button); color: var(--button-text); border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; margin-top: 12px; }
+        .cancel-btn { background: #ff4d4d; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="step-locations" class="section">
+        <h2>📍 Выберите заведение</h2>
+        <div id="locations-container">Загрузка...</div>
+        <button id="my-orders-btn-global" class="modal-btn hidden" style="background: #ffc107; color: #000;" onclick="showMyOrders()">📦 Мои активные заказы</button>
+    </div>
+
+    <div id="step-categories" class="hidden section">
+        <button class="btn-back" onclick="showLocations()">← Сменить заведение</button>
+        <h2 id="menu-loc-title">Меню</h2>
+        <div id="categories-container"></div>
+        
+        <div class="card-section">
+            <h3 style="margin-top: 0;">🛒 Корзина: <span id="cart-total">0</span> ₽</h3>
+            <div id="cart-items"></div>
+        </div>
+    </div>
+
+    <div id="step-items" class="hidden section">
+        <button class="btn-back" onclick="showCategories()">← Назад к меню</button>
+        <h2 id="current-category"></h2>
+        <div id="items-container"></div>
+    </div>
+
+    <div id="step-my-orders" class="hidden section">
+        <button class="btn-back" onclick="showLocations()">← На главную</button>
+        <h2>Мои заказы</h2>
+        <div id="my-orders-list"></div>
+    </div>
+
+    <div id="step-time" class="hidden section" style="margin-top: 30px; padding-bottom: 50px;">
+        <div class="card-section">
+            <h3 style="margin-top: 0;">Комментарий к заказу</h3>
+            <textarea id="order-comment" placeholder="Например: без лука, побольше салфеток..."></textarea>
+        </div>
+        
+        <div class="card-section">
+            <h3 style="margin-top: 0;">Укажите время готовности</h3>
+            <p id="time-hint" style="font-size: 14px; color: var(--hint); margin-top: -10px;"></p>
+            <input type="datetime-local" id="time-picker" style="margin-bottom: 0;">
+        </div>
+    </div>
+
+    <div id="addon-modal" class="modal-overlay hidden section">
+        <h2 id="modal-item-name">Название</h2>
+        <p id="modal-hint" style="color: gray;"></p>
+        <div id="modal-addons-list"></div>
+        <button class="modal-btn" onclick="confirmAddToCart()">Добавить в корзину</button>
+        <button class="modal-btn cancel-btn" onclick="closeAddonModal()">Отмена</button>
+    </div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    let locationsData = [];
+    let currentLocation = null;
+    let menuData = [];
+    let cart = {};
+    let currentItemSelection = null;
+    const tgUserId = tg.initDataUnsafe?.user?.id || 'test_user';
+    const tgUsername = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || '';
+
+    fetch('/api/locations?v=' + new Date().getTime()).then(res => res.json()).then(data => {
+        locationsData = data;
+        renderLocations();
+        checkMyOrders();
+    });
+
+    function renderLocations() {
+        const container = document.getElementById('locations-container');
+        container.innerHTML = '';
+        locationsData.forEach(loc => {
+            const div = document.createElement('div');
+            if (loc.is_active) {
+                div.className = 'location-card';
+                div.innerHTML = `<b>${loc.name}</b><span>🕒 Открыто с ${loc.open_time} до ${loc.close_time}</span>`;
+                div.onclick = () => selectLocation(loc);
+            } else {
+                div.className = 'location-card disabled';
+                div.innerHTML = `<b>${loc.name}</b><span class="status-tag">Временно не принимает заказы</span>`;
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function selectLocation(loc) {
+        currentLocation = loc; cart = {}; updateCartUI();
+        document.getElementById('menu-loc-title').innerText = `Меню (${loc.name})`;
+        document.getElementById('time-hint').innerText = `Часы работы: ${loc.open_time} - ${loc.close_time}`;
+        
+        const timePicker = document.getElementById('time-picker');
+        const nowSPb = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+        const minTime = new Date(nowSPb.getTime() + 20 * 60000); 
+        const maxTime = new Date(nowSPb.getTime() + 48 * 3600000); 
+        const formatForInput = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        timePicker.min = formatForInput(minTime); timePicker.max = formatForInput(maxTime); timePicker.value = formatForInput(minTime);
+
+        fetch(`/api/menu?location_id=${loc.id}&v=` + new Date().getTime()).then(res => res.json()).then(data => {
+            menuData = data;
+            document.getElementById('step-locations').classList.add('hidden');
+            document.getElementById('step-time').classList.remove('hidden');
+            renderCategories(); showCategories();
+        });
+    }
+
+    function showLocations() {
+        document.getElementById('step-categories').classList.add('hidden'); document.getElementById('step-items').classList.add('hidden');
+        document.getElementById('step-my-orders').classList.add('hidden'); document.getElementById('step-time').classList.add('hidden');
+        document.getElementById('step-locations').classList.remove('hidden');
+        tg.MainButton.hide(); checkMyOrders();
+    }
+
+    function renderCategories() {
+        // ИЗМЕНЕНО: Показываем 'main' и 'both' (Универсальные) в каталоге
+        const mainItems = menuData.filter(i => i.type === 'main' || i.type === 'both');
+        const categories = [...new Set(mainItems.map(item => item.category))];
+        const container = document.getElementById('categories-container');
+        container.innerHTML = '';
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'category-pill'; btn.innerText = cat; btn.onclick = () => showItems(cat);
+            container.appendChild(btn);
+        });
+    }
+
+    function showCategories() { document.getElementById('step-items').classList.add('hidden'); document.getElementById('step-categories').classList.remove('hidden'); }
+
+    function showItems(category) {
+        document.getElementById('step-categories').classList.add('hidden'); document.getElementById('step-items').classList.remove('hidden');
+        document.getElementById('current-category').innerText = category;
+        const container = document.getElementById('items-container');
+        container.innerHTML = '';
+        // ИЗМЕНЕНО: Фильтр для 'both'
+        menuData.filter(item => item.category === category && (item.type === 'main' || item.type === 'both')).forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'item-card';
+            div.innerHTML = `<div class="item-info"><h4>${item.name}</h4><span>${item.price} ₽</span></div><button class="add-btn" onclick="openAddonModal(${item.id})">+ Добавить</button>`;
+            container.appendChild(div);
+        });
+    }
+
+    function openAddonModal(itemId) {
+        const item = menuData.find(i => i.id === itemId);
+        currentItemSelection = item;
+        
+        const allowedIds = item.allowed_addons_ids || [];
+        const availableAddons = menuData.filter(i => allowedIds.includes(i.id));
+
+        if (availableAddons.length === 0) { confirmDirectAddToCart(item); return; }
+
+        document.getElementById('modal-item-name').innerText = item.name;
+        document.getElementById('modal-hint').innerText = item.name.includes('Комбо') ? "Выберите 1 чебурек и 1 напиток:" : "Выберите добавки/соусы:";
+
+        const addonsContainer = document.getElementById('modal-addons-list');
+        addonsContainer.innerHTML = '';
+        
+        availableAddons.forEach(addon => {
+            const priceText = addon.price > 0 ? `+${addon.price}₽` : '<span style="color:#28a745;">В комбо</span>';
+            addonsContainer.innerHTML += `<div class="addon-item"><input type="checkbox" id="addon-${addon.id}" value="${addon.id}" data-name="${addon.name}" data-price="${addon.price}"><label for="addon-${addon.id}">${addon.name}</label><span style="font-size: 14px; font-weight: bold;">${priceText}</span></div>`;
+        });
+        
+        document.getElementById('step-items').classList.add('hidden');
+        document.getElementById('addon-modal').classList.remove('hidden');
+    }
+
+    function confirmDirectAddToCart(item) {
+        const cartKey = `${item.id}_`; 
+        if (!cart[cartKey]) cart[cartKey] = { main: item, addons: [], totalItemPrice: item.price, count: 0 };
+        cart[cartKey].count++; updateCartUI(); tg.HapticFeedback.impactOccurred('light'); tg.showAlert(`Добавлено: ${item.name}`);
+    }
+
+    function closeAddonModal() { document.getElementById('addon-modal').classList.add('hidden'); document.getElementById('step-items').classList.remove('hidden'); }
+
+    function confirmAddToCart() {
+        const checkboxes = document.querySelectorAll('#modal-addons-list input[type="checkbox"]:checked');
+        const selectedAddons = Array.from(checkboxes).map(cb => ({ id: cb.value, name: cb.dataset.name, price: parseInt(cb.dataset.price) }));
+
+        if (currentItemSelection.name.includes('Комбо')) {
+            const chebCount = selectedAddons.filter(a => a.name.includes('Чебурек:')).length;
+            const drinkCount = selectedAddons.filter(a => a.name.includes('Напиток:')).length;
+            if (chebCount !== 1 || drinkCount !== 1) { tg.showAlert('Для комбо необходимо выбрать ровно 1 чебурек и 1 напиток!'); return; }
+        }
+
+        const addonIds = selectedAddons.map(a => a.id).sort().join('-');
+        const cartKey = `${currentItemSelection.id}_${addonIds}`;
+
+        if (!cart[cartKey]) cart[cartKey] = { main: currentItemSelection, addons: selectedAddons, totalItemPrice: currentItemSelection.price + selectedAddons.reduce((sum, a) => sum + a.price, 0), count: 0 };
+        cart[cartKey].count++; closeAddonModal(); showCategories(); updateCartUI(); tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function removeFromCart(cartKey) {
+        if (cart[cartKey]) {
+            cart[cartKey].count--;
+            if (cart[cartKey].count <= 0) delete cart[cartKey];
+            updateCartUI(); tg.HapticFeedback.impactOccurred('light');
+        }
+    }
+
+    function updateCartUI() {
+        const cartDiv = document.getElementById('cart-items');
+        let total = 0; cartDiv.innerHTML = '';
+        
+        Object.entries(cart).forEach(([key, item]) => {
+            if (item.count > 0) {
+                total += item.totalItemPrice * item.count;
+                const addonsText = item.addons.length > 0 ? `<br><small style="color: gray;">└ ${item.addons.map(a=>a.name).join(', ')}</small>` : '';
+                cartDiv.innerHTML += `<div class="cart-item"><div><b>${item.main.name} (x${item.count})</b><br>${item.totalItemPrice * item.count} ₽ ${addonsText}</div><button class="add-btn" style="color:#ff4d4d; background:none; font-size:18px;" onclick="removeFromCart('${key}')">✕</button></div>`;
+            }
+        });
+        
+        document.getElementById('cart-total').innerText = total;
+        if (total > 0) { tg.MainButton.text = `ОФОРМИТЬ (${total} РУБ.)`; tg.MainButton.show(); } else { tg.MainButton.hide(); }
+    }
+
+    function checkMyOrders() { fetch(`/api/my_orders?tg_id=${tgUserId}`).then(res => res.json()).then(orders => { const btn = document.getElementById('my-orders-btn-global'); if (orders.length > 0) btn.classList.remove('hidden'); else btn.classList.add('hidden'); }); }
+
+    function showMyOrders() {
+        document.getElementById('step-locations').classList.add('hidden'); document.getElementById('step-my-orders').classList.remove('hidden');
+        const container = document.getElementById('my-orders-list'); container.innerHTML = 'Загрузка...';
+        fetch(`/api/my_orders?tg_id=${tgUserId}`).then(res => res.json()).then(orders => {
+            container.innerHTML = '';
+            if(orders.length === 0) { container.innerHTML = 'Нет активных заказов.'; return; }
+            orders.forEach(o => { container.innerHTML += `<div class="item-card" style="display:block;"><h3>Заказ #${o.id} (${o.loc_name})</h3><p>К времени: ${o.ready_time.replace('T', ' ')}</p><button class="item-btn" style="background:#dc3545; width:100%;" onclick="cancelMyOrder(${o.id})">❌ Отменить заказ</button></div>`; });
+        });
+    }
+
+    function cancelMyOrder(orderId) {
+        tg.showConfirm("Отменить этот заказ?", (confirm) => { if(confirm) { fetch(`/api/orders/${orderId}/cancel_by_user`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tg_id: tgUserId }) }).then(() => { tg.showAlert("Заказ отменен"); showLocations(); }); } });
+    }
+
+    tg.MainButton.onClick(() => {
+        if(!currentLocation) return;
+        const selectedTime = document.getElementById('time-picker').value;
+        const comment = document.getElementById('order-comment').value;
+
+        if (!selectedTime) { tg.showAlert("Укажите время готовности!"); return; }
+
+        const items = Object.values(cart).filter(i => i.count > 0);
+        
+        fetch('/api/order', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ location_id: currentLocation.id, tg_id: tgUserId, username: tgUsername, items: items, time: selectedTime, comment: comment })
+        }).then(res => res.json()).then(res => {
+            if(res.success) { tg.showAlert("Заказ успешно отправлен!"); tg.close(); } 
+            else { tg.showAlert(res.error || "Ошибка при оформлении"); }
+        });
+    });
+</script>
+</body>
+</html>

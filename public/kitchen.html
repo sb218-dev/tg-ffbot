@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Управления Сетью</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: white; padding: 10px; border-radius: 8px; flex-wrap: wrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .tab-btn { flex: 1; min-width: 150px; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; background: #e9ecef; color: #495057; transition: 0.2s; }
+        .tab-btn.active { background: #007bff; color: white; }
+        .hidden { display: none !important; }
+
+        .btn { padding: 10px 15px; font-size: 14px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background: #007bff; }
+        .btn-success { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .btn-secondary { background: #6c757d; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-block { width: 100%; margin-bottom: 10px; }
+
+        .order-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; border-left: 5px solid gray; }
+        .order-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .status-new { border-left-color: #ffc107; } .status-ready { border-left-color: #28a745; opacity: 0.6; } .status-cancelled { border-left-color: #dc3545; opacity: 0.6; } 
+        .details-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .meta-info { font-size: 14px; color: #666; background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
+        .comment-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; border-left: 4px solid #ffeeba; margin-bottom: 15px; font-weight: bold;}
+
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;}
+        .table-responsive { overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; text-transform: uppercase; font-size: 12px; color: #666; }
+        .badge { padding: 5px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge-main { background: #e3f2fd; color: #0d6efd; } .badge-addon { background: #fdf5e3; color: #ffc107; } .badge-both { background: #d1e7dd; color: #0f5132; }
+        .loc-badge { background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-block; margin-bottom: 10px; }
+
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #dc3545; transition: .3s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #28a745; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 10px; width: 400px; max-width: 90%; max-height: 80vh; overflow-y: auto;}
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .addon-checkbox-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .addon-checkbox-list label { font-weight: normal; display: flex; align-items: center; gap: 10px; cursor: pointer;}
+    </style>
+</head>
+<body>
+
+    <div class="nav-tabs">
+        <button id="tab-orders" class="tab-btn active" onclick="switchTab('orders')">👨‍🍳 Заказы</button>
+        <button id="tab-menu" class="tab-btn" onclick="switchTab('menu')">🍔 Меню и Стоп-листы</button>
+        <button id="tab-locations" class="tab-btn" onclick="switchTab('locations')">📍 Заведения</button>
+    </div>
+
+    <div id="section-orders">
+        <div id="orders-list">
+            <h2>🔥 Поступающие заказы</h2>
+            <div id="orders-container">Загрузка...</div>
+        </div>
+
+        <div id="order-details" class="hidden">
+            <button class="btn btn-secondary btn-block" onclick="showOrderList()">🔙 Назад к списку</button>
+            <div class="details-box">
+                <h2 id="detail-title">Заказ #</h2>
+                <div id="detail-loc" class="loc-badge"></div>
+                <div class="meta-info">
+                    <p style="margin: 0 0 5px 0;"><strong>🕒 Создан:</strong> <span id="detail-created"></span></p>
+                    <p style="margin: 0;"><strong>👤 Клиент:</strong> <span id="detail-tgid"></span></p>
+                </div>
+                <div id="detail-comment" class="comment-box hidden"></div>
+                <p><strong>Статус:</strong> <span id="detail-status"></span></p>
+                <p><strong>Готовить к:</strong> <span id="detail-time" style="font-weight:bold; color:red;"></span></p>
+                <hr>
+                <p><strong>Состав заказа:</strong></p>
+                <h3 id="detail-items" style="color: #333; white-space: pre-wrap;"></h3>
+                <div id="action-buttons" style="margin-top: 25px;">
+                    <button id="ready-btn" class="btn btn-success btn-block">✅ Отметить как "Готово"</button>
+                    <button id="cancel-btn" class="btn btn-danger btn-block">❌ Отменить заказ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="section-menu" class="hidden">
+        <div class="table-header">
+            <select id="admin-loc-select" class="btn btn-secondary" onchange="loadMenuData()" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; background: white; color: black; font-weight:bold;">
+            </select>
+            <button class="btn btn-primary" onclick="openAddModal()">+ Добавить блюдо</button>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Категория</th><th>Название</th><th>Цена</th><th>В наличии</th><th>Настройки</th></tr>
+                </thead>
+                <tbody id="menu-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="section-locations" class="hidden">
+        <div class="table-header">
+            <h2 style="margin: 0;">Управление точками</h2>
+            <button class="btn btn-primary" onclick="openLocModal()">+ Добавить заведение</button>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Адрес / Название</th><th>Открытие</th><th>Закрытие</th><th>Статус (Прием заказов)</th><th>Действия</th></tr>
+                </thead>
+                <tbody id="loc-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="menuModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="menu-modal-title">Новая позиция</h2>
+            <input type="hidden" id="edit-id">
+            <div class="form-group"><label>Категория</label><input type="text" id="edit-category"></div>
+            <div class="form-group"><label>Название</label><input type="text" id="edit-name"></div>
+            <div class="form-group"><label>Цена (руб)</label><input type="number" id="edit-price"></div>
+            <div class="form-group" id="type-group">
+                <label>Тип</label>
+                <select id="edit-type">
+                    <option value="main">Основное блюдо</option>
+                    <option value="addon">Скрытая добавка (Только внутри блюд)</option>
+                    <option value="both">Универсальное (Основное + Добавка)</option>
+                </select>
+            </div>
+            <button class="btn btn-success btn-block" onclick="saveMenu()">Сохранить</button>
+            <button class="btn btn-secondary btn-block" onclick="closeModals()">Отмена</button>
+        </div>
+    </div>
+
+    <div id="locModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="loc-modal-title">Новое заведение</h2>
+            <input type="hidden" id="edit-loc-id">
+            <div class="form-group"><label>Название / Адрес</label><input type="text" id="edit-loc-name"></div>
+            <div class="form-group"><label>Время открытия (ЧЧ:ММ)</label><input type="time" id="edit-loc-open" value="11:00"></div>
+            <div class="form-group"><label>Время закрытия (ЧЧ:ММ)</label><input type="time" id="edit-loc-close" value="23:00"></div>
+            <button class="btn btn-success btn-block" onclick="saveLocation()">Сохранить</button>
+            <button class="btn btn-secondary btn-block" onclick="closeModals()">Отмена</button>
+        </div>
+    </div>
+
+    <div id="linkModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Добавки: <span id="link-item-name" style="color: #007bff;"></span></h2>
+            <div id="addons-checkbox-container" class="addon-checkbox-list"></div>
+            <button class="btn btn-success btn-block" style="margin-top: 20px;" onclick="saveLinks()">Сохранить связи</button>
+            <button class="btn btn-secondary btn-block" onclick="closeModals()">Отмена</button>
+        </div>
+    </div>
+
+<script>
+    let globalLocations = [];
+    let currentOrders = [];
+    let allMenu = [];
+    let allMappings = [];
+    let currentEditingMainId = null;
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        document.getElementById('section-orders').classList.add('hidden');
+        document.getElementById('section-menu').classList.add('hidden');
+        document.getElementById('section-locations').classList.add('hidden');
+        document.getElementById(`section-${tabName}`).classList.remove('hidden');
+
+        if (tabName === 'menu') { loadLocationsForSelect().then(() => loadMenuData()); }
+        if (tabName === 'locations') { loadLocationsData(); }
+    }
+
+    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
+
+    // ================= 1. ЗАКАЗЫ =================
+    function loadOrders() {
+        fetch('/api/orders').then(res => res.json()).then(orders => {
+            currentOrders = orders;
+            const container = document.getElementById('orders-container');
+            container.innerHTML = '';
+            if (orders.length === 0) { container.innerHTML = '<p>Пока нет заказов.</p>'; return; }
+
+            orders.forEach(o => {
+                const div = document.createElement('div');
+                let statusClass = o.status === 'ready' ? 'status-ready' : (o.status === 'cancelled' ? 'status-cancelled' : 'status-new');
+                let statusText = o.status === 'ready' ? '✅ Готов' : (o.status === 'cancelled' ? '❌ Отменен' : '🕒 В ожидании');
+                const cMark = o.comment ? ' 💬' : '';
+                div.className = `order-card ${statusClass}`;
+                div.onclick = () => showOrderDetails(o.id);
+                div.innerHTML = `
+                    <h3 style="margin: 0 0 5px 0;">#${o.id}${cMark} <span style="font-size:12px; color:gray; font-weight:normal;">[${o.loc_name}]</span></h3>
+                    <p style="margin: 5px 0;"><strong>К времени:</strong> ${o.ready_time.replace('T', ' ')}</p>
+                    <p style="margin: 5px 0;"><strong>Статус:</strong> ${statusText}</p>
+                `;
+                container.appendChild(div);
+            });
+        });
+    }
+
+    function showOrderDetails(id) {
+        const order = currentOrders.find(o => o.id === id);
+        document.getElementById('orders-list').classList.add('hidden');
+        document.getElementById('order-details').classList.remove('hidden');
+        
+        document.getElementById('detail-title').innerText = `Заказ #${order.id}`;
+        document.getElementById('detail-loc').innerText = `📍 ${order.loc_name}`;
+        document.getElementById('detail-created').innerText = order.created_at || '';
+        document.getElementById('detail-tgid').innerText = order.username ? `@${order.username}` : `ID: ${order.tg_id}`;
+        
+        const cBox = document.getElementById('detail-comment');
+        if (order.comment) { cBox.innerText = `Комментарий: ${order.comment}`; cBox.classList.remove('hidden'); } else cBox.classList.add('hidden');
+        
+        document.getElementById('detail-status').innerText = order.status === 'ready' ? '✅ Готов' : (order.status === 'cancelled' ? '❌ Отменен' : '🕒 В ожидании');
+        document.getElementById('detail-time').innerText = order.ready_time.replace('T', ' ');
+        document.getElementById('detail-items').innerText = order.details;
+
+        const actionBtns = document.getElementById('action-buttons');
+        if (order.status === 'new') {
+            actionBtns.style.display = 'block';
+            document.getElementById('ready-btn').onclick = () => updateOrderStatus(order.id, 'ready');
+            document.getElementById('cancel-btn').onclick = () => { if(confirm('Отменить?')) updateOrderStatus(order.id, 'cancelled'); };
+        } else { actionBtns.style.display = 'none'; }
+    }
+
+    function showOrderList() { document.getElementById('order-details').classList.add('hidden'); document.getElementById('orders-list').classList.remove('hidden'); loadOrders(); }
+    function updateOrderStatus(id, status) { fetch(`/api/orders/${id}/status`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status }) }).then(() => showOrderList()); }
+    loadOrders(); setInterval(loadOrders, 5000);
+
+    // ================= 2. ЛОКАЦИИ =================
+    function loadLocationsData() {
+        fetch('/api/admin/locations').then(res => res.json()).then(locs => {
+            globalLocations = locs;
+            const tbody = document.getElementById('loc-table-body');
+            tbody.innerHTML = '';
+            locs.forEach(loc => {
+                const isChecked = loc.is_active ? 'checked' : '';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${loc.id}</td><td><b>${loc.name}</b></td><td>${loc.open_time}</td><td>${loc.close_time}</td>
+                        <td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleLocStatus(${loc.id}, this.checked)"><span class="slider"></span></label></td>
+                        <td><button class="btn btn-warning" onclick="openEditLocModal(${loc.id})">✏️ Ред.</button></td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    function loadLocationsForSelect() {
+        return fetch('/api/admin/locations').then(res => res.json()).then(locs => {
+            globalLocations = locs;
+            const sel = document.getElementById('admin-loc-select');
+            sel.innerHTML = '';
+            locs.forEach(l => sel.innerHTML += `<option value="${l.id}">${l.name}</option>`);
+        });
+    }
+
+    function toggleLocStatus(id, isActive) {
+        const loc = globalLocations.find(l => l.id === id);
+        fetch(`/api/admin/locations/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...loc, is_active: isActive?1:0}) });
+    }
+
+    function openLocModal() {
+        document.getElementById('edit-loc-id').value = ''; document.getElementById('edit-loc-name').value = '';
+        document.getElementById('edit-loc-open').value = '11:00'; document.getElementById('edit-loc-close').value = '23:00';
+        document.getElementById('loc-modal-title').innerText = 'Новое заведение';
+        document.getElementById('locModal').style.display = 'flex';
+    }
+
+    function openEditLocModal(id) {
+        const loc = globalLocations.find(l => l.id === id);
+        document.getElementById('edit-loc-id').value = loc.id;
+        document.getElementById('edit-loc-name').value = loc.name;
+        document.getElementById('edit-loc-open').value = loc.open_time;
+        document.getElementById('edit-loc-close').value = loc.close_time;
+        document.getElementById('loc-modal-title').innerText = 'Редактировать заведение';
+        document.getElementById('locModal').style.display = 'flex';
+    }
+
+    function saveLocation() {
+        const id = document.getElementById('edit-loc-id').value;
+        const payload = { name: document.getElementById('edit-loc-name').value, open_time: document.getElementById('edit-loc-open').value, close_time: document.getElementById('edit-loc-close').value };
+        if (id) fetch(`/api/admin/locations/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...globalLocations.find(l => l.id == id), ...payload}) }).then(() => { closeModals(); loadLocationsData(); });
+        else fetch(`/api/admin/locations`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }).then(() => { closeModals(); loadLocationsData(); });
+    }
+
+    // ================= 3. МЕНЮ =================
+    function loadMenuData() {
+        const locId = document.getElementById('admin-loc-select').value;
+        if(!locId) return;
+        fetch(`/api/admin/menu/${locId}`).then(res => res.json()).then(data => {
+            allMenu = data.menu; allMappings = data.addons; renderMenuTable();
+        });
+    }
+
+    function renderMenuTable() {
+        const tbody = document.getElementById('menu-table-body');
+        tbody.innerHTML = '';
+        allMenu.forEach(item => {
+            const isChecked = item.is_available ? 'checked' : '';
+            // ИЗМЕНЕНО: Обрабатываем бейджик для типа 'both'
+            let tBadge = '';
+            if (item.type === 'main') tBadge = '<span class="badge badge-main">ОСНОВНОЕ</span>';
+            else if (item.type === 'addon') tBadge = '<span class="badge badge-addon">ДОБАВКА</span>';
+            else tBadge = '<span class="badge badge-both">УНИВЕРСАЛЬНОЕ</span>';
+
+            const linkBtn = (item.type === 'main' || item.type === 'both') ? `<button class="btn btn-primary" style="padding: 5px 10px;" onclick="openLinkModal(${item.id})">🔗</button>` : '';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.id}</td><td><b>${item.category}</b></td><td>${item.name} <br> ${tBadge}</td><td>${item.price} ₽</td>
+                    <td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleMenuStatus(${item.id}, this.checked)"><span class="slider"></span></label></td>
+                    <td><div style="display:flex;gap:5px;">${linkBtn}<button class="btn btn-warning" style="padding: 5px 10px;" onclick="openEditMenuModal(${item.id})">✏️</button><button class="btn btn-danger" style="padding: 5px 10px;" onclick="deleteMenuItem(${item.id})">🗑️</button></div></td>
+                </tr>
+            `;
+        });
+    }
+
+    function toggleMenuStatus(id, isAvail) { fetch(`/api/admin/menu/${id}/toggle`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_available: isAvail?1:0 }) }); }
+    function deleteMenuItem(id) { if(confirm("Удалить позицию?")) fetch(`/api/admin/menu/${id}`, { method: 'DELETE' }).then(() => loadMenuData()); }
+
+    function openAddModal() {
+        document.getElementById('edit-id').value = ''; document.getElementById('edit-category').value = '';
+        document.getElementById('edit-name').value = ''; document.getElementById('edit-price').value = '';
+        document.getElementById('edit-type').value = 'main';
+        document.getElementById('menu-modal-title').innerText = 'Новая позиция';
+        document.getElementById('menuModal').style.display = 'flex';
+    }
+
+    function openEditMenuModal(id) {
+        const item = allMenu.find(i => i.id === id);
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('edit-category').value = item.category;
+        document.getElementById('edit-name').value = item.name;
+        document.getElementById('edit-price').value = item.price;
+        document.getElementById('edit-type').value = item.type;
+        document.getElementById('menu-modal-title').innerText = 'Редактировать позицию';
+        document.getElementById('menuModal').style.display = 'flex';
+    }
+
+    function saveMenu() {
+        const locId = document.getElementById('admin-loc-select').value;
+        const id = document.getElementById('edit-id').value;
+        const payload = { location_id: locId, category: document.getElementById('edit-category').value, name: document.getElementById('edit-name').value, price: document.getElementById('edit-price').value, type: document.getElementById('edit-type').value };
+        
+        if (id) fetch(`/api/admin/menu/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }).then(() => { closeModals(); loadMenuData(); });
+        else fetch('/api/admin/menu', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }).then(() => { closeModals(); loadMenuData(); });
+    }
+
+    function openLinkModal(mainId) {
+        currentEditingMainId = mainId;
+        document.getElementById('link-item-name').innerText = allMenu.find(i => i.id === mainId).name;
+        const activeIds = allMappings.filter(m => m.main_id === mainId).map(m => m.addon_id);
+        const container = document.getElementById('addons-checkbox-container');
+        container.innerHTML = '';
+        // ИЗМЕНЕНО: В окне связей показываем и 'addon' и 'both'
+        allMenu.filter(i => i.type === 'addon' || i.type === 'both').forEach(addon => {
+            const isChecked = activeIds.includes(addon.id) ? 'checked' : '';
+            container.innerHTML += `<label><input type="checkbox" class="addon-check" value="${addon.id}" ${isChecked}>${addon.name} (+${addon.price}₽) <span style="color:gray;font-size:12px;">[${addon.category}]</span></label>`;
+        });
+        document.getElementById('linkModal').style.display = 'flex';
+    }
+
+    function saveLinks() {
+        const selectedIds = Array.from(document.querySelectorAll('.addon-check:checked')).map(cb => parseInt(cb.value));
+        fetch(`/api/admin/menu/${currentEditingMainId}/addons`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ addon_ids: selectedIds }) }).then(() => { closeModals(); loadMenuData(); });
+    }
+</script>
+</body>
+</html>
