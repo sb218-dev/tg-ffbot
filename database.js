@@ -10,8 +10,9 @@ db.serialize(() => {
     // type теперь может быть 'main', 'addon' или 'both'
     db.run("CREATE TABLE IF NOT EXISTS menu (id INTEGER PRIMARY KEY, location_id INTEGER, category TEXT, name TEXT, price INTEGER, type TEXT DEFAULT 'main', is_available INTEGER DEFAULT 1, FOREIGN KEY(location_id) REFERENCES locations(id))");
     db.run("CREATE TABLE IF NOT EXISTS item_addons (main_id INTEGER, addon_id INTEGER, FOREIGN KEY(main_id) REFERENCES menu(id), FOREIGN KEY(addon_id) REFERENCES menu(id))");
-    db.run("CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY, location_id INTEGER, tg_id TEXT, username TEXT, details TEXT, comment TEXT, ready_time TEXT, status TEXT, created_at TEXT, late_notified INTEGER DEFAULT 0, FOREIGN KEY(location_id) REFERENCES locations(id))");
+    db.run("CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY, location_id INTEGER, tg_id TEXT, username TEXT, details TEXT, comment TEXT, ready_time TEXT, status TEXT, created_at TEXT, late_notified INTEGER DEFAULT 0, total_price INTEGER DEFAULT 0, FOREIGN KEY(location_id) REFERENCES locations(id))");
     db.run("CREATE TABLE IF NOT EXISTS users (tg_id TEXT PRIMARY KEY, username TEXT, phone TEXT, last_location_id INTEGER, points INTEGER DEFAULT 0)");
+    db.run("ALTER TABLE orders ADD COLUMN total_price INTEGER DEFAULT 0", (err) => { /* Игнорируем ошибку, если колонка уже существует */ });
 
     // Создаем индексы для быстрого поиска
     db.run("CREATE INDEX IF NOT EXISTS idx_orders_tgid ON orders(tg_id)");

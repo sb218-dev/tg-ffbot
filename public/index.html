@@ -25,19 +25,19 @@
         <h2>📍 Выберите заведение</h2>
         <div id="map" style="width: 100%; height: 250px; border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;"></div>
         <div id="locations-container">Загрузка...</div>
-        <button id="my-orders-btn-global" class="modal-btn hidden" style="background: var(--accent); color: #fff;" onclick="showMyOrders()">📦 Мои активные заказы</button>
+        <button id="my-orders-btn-global" class="modal-btn hidden" style="background: var(--accent); color: #fff;" onclick="showMyOrders()">📦 Мой активный заказ</button>
     </div>
 
     <div id="step-menu" class="hidden section">
         <button class="btn-back" onclick="showLocations()">← Сменить заведение</button>
         <h2 id="menu-loc-title" style="margin-bottom: 12px;">Меню</h2>
         
-        <div id="search-container" class="hidden" style="margin-bottom: 16px;">
-            <input type="text" id="search-input" placeholder="Поиск блюд..." oninput="onSearchInput(this.value)" style="margin-bottom: 0;">
-        </div>
-
-        <div class="menu-header">
-            <button class="search-btn" onclick="toggleSearch()">🔍</button>
+        <div class="menu-header-wrapper">
+            <button class="search-btn" id="btn-open-search" onclick="openSearch()">🔍</button>
+            <div class="search-input-wrapper" id="search-wrapper">
+                <input type="text" class="search-input-pill" id="search-input" placeholder="Поиск блюд..." oninput="onSearchInput(this.value)">
+                <button class="close-search-btn" onclick="closeSearch()">✕</button>
+            </div>
             <div class="categories-scroll" id="categories-container"></div>
         </div>
         
@@ -51,16 +51,7 @@
             <div id="cart-items"></div>
             <div style="text-align: right; font-weight: 700; font-size: 18px; margin-top: 16px;">Итого: <span id="cart-total-page">0</span> ₽</div>
         </div>
-    </div>
 
-    <div id="step-my-orders" class="hidden section">
-        <button class="btn-back" onclick="showLocations()">← На главную</button>
-        <h2>Мои заказы</h2>
-        <div id="my-orders-list"></div>
-    </div>
-
-    <div id="step-time" class="hidden section" style="margin-top: 30px; padding-bottom: 50px;">
-        <button class="btn-back" onclick="showCart()">← Вернуться в корзину</button>
         <div class="card-section">
             <h3 style="margin-top: 0;">Комментарий к заказу</h3>
             <textarea id="order-comment" placeholder="Например: без лука, побольше салфеток..."></textarea>
@@ -73,11 +64,20 @@
         </div>
     </div>
 
+    <div id="step-my-orders" class="hidden section">
+        <button class="btn-back" onclick="showLocations()">← На главную</button>
+        <h2 style="margin-bottom: 12px;">Мой заказ</h2>
+        <div class="card-section" id="my-order-details-card">
+            <!-- Детали заказа генерируются динамически -->
+        </div>
+        <button class="modal-btn" id="btn-cancel-order" style="background: #dc3545; color: #fff; margin-top: 20px;">❌ Отказаться</button>
+    </div>
+
     <div id="addon-modal" class="modal-overlay hidden section">
         <h2 id="modal-item-name">Название</h2>
-        <p id="modal-hint" style="color: gray;"></p>
-        <div id="modal-addons-list"></div>
-        <button class="modal-btn" onclick="confirmAddToCart()">Добавить в корзину</button>
+        <p id="modal-hint" style="color: var(--hint); font-size: 14px; margin-top:-10px;"></p>
+        <div id="modal-addons-list" class="addon-grid"></div>
+        <button class="modal-btn" id="btn-confirm-addons" onclick="confirmAddToCart()">Добавить в корзину</button>
         <button class="modal-btn cancel-btn" onclick="closeAddonModal()">Отмена</button>
     </div>
 

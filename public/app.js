@@ -60,7 +60,6 @@ function addMarkers() {
             myMap.geoObjects.add(placemark);
         }
     });
-    if (myMap.geoObjects.getBounds()) myMap.setBounds(myMap.geoObjects.getBounds(), { checkZoomRange: true, zoomMargin: 15 });
     markersAdded = true;
 }
 
@@ -162,9 +161,8 @@ function renderMenu() {
                 <img src="/images/${encodeURIComponent(item.name)}.webp" onerror="this.src='https://placehold.co/300x300/E9EEF5/3F5CA9?text=Нет+фото'" class="item-image" alt="${item.name}">
                 <div class="item-info">
                     <h4>${item.name}</h4>
-                    <span>${item.price} ₽</span>
                 </div>
-                <button class="add-btn" onclick="openAddonModal(${item.id})">+ Добавить</button>
+                <button class="price-btn" onclick="openAddonModal(${item.id})">${item.price} ₽</button>
             `;
             grid.appendChild(div);
         });
@@ -187,17 +185,14 @@ function showCart() {
     updateMainButton();
 }
 
-function showTime() {
-    currentStep = 'time';
-    document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
-    document.getElementById('step-time').classList.remove('hidden');
-    updateMainButton();
+function openSearch() {
+    document.getElementById('btn-open-search').style.display = 'none'; document.getElementById('categories-container').style.display = 'none';
+    document.getElementById('search-wrapper').classList.add('active'); document.getElementById('search-input').focus();
 }
-
-function toggleSearch() {
-    const s = document.getElementById('search-container');
-    s.classList.toggle('hidden');
-    if(!s.classList.contains('hidden')) document.getElementById('search-input').focus();
+function closeSearch() {
+    document.getElementById('search-input').value = ''; filterItems('');
+    document.getElementById('search-wrapper').classList.remove('active');
+    document.getElementById('btn-open-search').style.display = 'flex'; document.getElementById('categories-container').style.display = 'flex';
 }
 
 // Реализация Debounce (Задержки) для поиска
@@ -231,15 +226,35 @@ function openAddonModal(itemId) {
     document.getElementById('modal-hint').innerText = item.name.includes('Комбо') ? "Выберите 1 чебурек и 1 напиток:" : "Выберите добавки/соусы:";
 
     const addonsContainer = document.getElementById('modal-addons-list');
-    addonsContainer.innerHTML = '';
+    let addonsHtml = '';
     
     availableAddons.forEach(addon => {
-        const priceText = addon.price > 0 ? `+${addon.price}₽` : '<span style="color:var(--button);">В комбо</span>';
-        addonsContainer.innerHTML += `<div class="addon-item"><input type="checkbox" id="addon-${addon.id}" value="${addon.id}" data-name="${addon.name}" data-price="${addon.price}"><label for="addon-${addon.id}">${addon.name}</label><span style="font-size: 14px; font-weight: bold; color: var(--accent);">${priceText}</span></div>`;
+        const priceText = addon.price > 0 ? `+${addon.price} ₽` : 'В комбо';
+        addonsHtml += `
+            <div class="addon-box" onclick="toggleAddon(this)">
+                <input type="checkbox" value="${addon.id}" data-name="${addon.name}" data-price="${addon.price}">
+                <span class="addon-name">${addon.name}</span>
+                <span class="addon-price">${priceText}</span>
+            </div>
+        `;
     });
+    addonsContainer.innerHTML = addonsHtml;
     
+    updateAddonModalPrice();
     document.getElementById('step-menu').classList.add('hidden');
     document.getElementById('addon-modal').classList.remove('hidden');
+}
+
+function toggleAddon(boxElement) {
+    const cb = boxElement.querySelector('input[type="checkbox"]');
+    cb.checked = !cb.checked;
+    if (cb.checked) boxElement.classList.add('selected'); else boxElement.classList.remove('selected');
+    updateAddonModalPrice(); tg.HapticFeedback.selectionChanged();
+}
+function updateAddonModalPrice() {
+    if (!currentItemSelection) return; let sum = currentItemSelection.price;
+    document.querySelectorAll('#modal-addons-list input[type="checkbox"]:checked').forEach(cb => { sum += parseInt(cb.dataset.price); });
+    document.getElementById('btn-confirm-addons').innerText = `Добавить в корзину +${sum} ₽`;
 }
 
 function confirmDirectAddToCart(item) {
@@ -277,15 +292,17 @@ function removeFromCart(cartKey) {
 
 function updateCartUI() {
     const cartDiv = document.getElementById('cart-items');
-    let total = 0; cartDiv.innerHTML = '';
+    let total = 0;
+    let cartHtml = '';
     
     Object.entries(cart).forEach(([key, item]) => {
         if (item.count > 0) {
             total += item.totalItemPrice * item.count;
             const addonsText = item.addons.length > 0 ? `<br><small style="color: var(--hint);">└ ${item.addons.map(a=>a.name).join(', ')}</small>` : '';
-            cartDiv.innerHTML += `<div class="cart-item"><div><b>${item.main.name} (x${item.count})</b><br><span style="color: var(--accent); font-weight: 700;">${item.totalItemPrice * item.count} ₽</span> ${addonsText}</div><button class="add-btn" style="color:var(--hint); background:none; font-size:18px; width:auto; padding:4px 10px;" onclick="removeFromCart('${key}')">✕</button></div>`;
+            cartHtml += `<div class="cart-item"><div><b>${item.main.name} (x${item.count})</b><br><span style="color: var(--accent); font-weight: 700;">${item.totalItemPrice * item.count} ₽</span> ${addonsText}</div><button class="cart-item-btn" onclick="removeFromCart('${key}')">✕</button></div>`;
         }
     });
+    cartDiv.innerHTML = cartHtml;
     
     if (document.getElementById('cart-total-page')) {
         document.getElementById('cart-total-page').innerText = total;
@@ -304,10 +321,8 @@ function updateMainButton(total) {
         if (total > 0) tg.MainButton.setParams({ text: `В КОРЗИНУ (${total} ₽)`, color: '#3F5CA9', text_color: '#ffffff', is_active: true, is_visible: true });
         else tg.MainButton.hide();
     } else if (currentStep === 'cart') {
-        if (total > 0) tg.MainButton.setParams({ text: `К ОФОРМЛЕНИЮ`, color: '#3F5CA9', text_color: '#ffffff', is_active: true, is_visible: true });
+        if (total > 0) tg.MainButton.setParams({ text: `ОФОРМИТЬ ЗАКАЗ`, color: '#3F5CA9', text_color: '#ffffff', is_active: true, is_visible: true });
         else tg.MainButton.setParams({ text: 'КОРЗИНА ПУСТА', color: '#d1d1d6', text_color: '#6c757d', is_active: false, is_visible: true });
-    } else if (currentStep === 'time') {
-        tg.MainButton.setParams({ text: `ОФОРМИТЬ ЗАКАЗ`, color: '#3F5CA9', text_color: '#ffffff', is_active: true, is_visible: true });
     } else {
         tg.MainButton.hide();
     }
@@ -320,11 +335,32 @@ function showMyOrders() {
     document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
     document.getElementById('step-my-orders').classList.remove('hidden');
     updateMainButton();
-    const container = document.getElementById('my-orders-list'); container.innerHTML = 'Загрузка...';
+    const card = document.getElementById('my-order-details-card'); card.innerHTML = 'Загрузка...';
+    document.getElementById('btn-cancel-order').style.display = 'none';
+    
     fetch(`/api/my_orders?tg_id=${tgUserId}`).then(res => res.json()).then(orders => {
-        container.innerHTML = '';
-        if(orders.length === 0) { container.innerHTML = 'Нет активных заказов.'; return; }
-        orders.forEach(o => { container.innerHTML += `<div class="item-card" style="display:block;"><h3>Заказ #${o.id} (${o.loc_name})</h3><p>К времени: ${o.ready_time.replace('T', ' ')}</p><button class="item-btn" style="background:#dc3545; width:100%;" onclick="cancelMyOrder(${o.id})">❌ Отменить заказ</button></div>`; });
+        card.innerHTML = '';
+        if(orders.length === 0) { card.innerHTML = '<p style="text-align:center; color: var(--hint);">Нет активных заказов.</p>'; return; }
+        
+        const order = orders[0]; // Берем самый свежий заказ пользователя
+        const detailsHtml = `
+            <h3 style="margin-top:0; color: var(--button);">Заказ #${order.id}</h3>
+            <p style="color: var(--hint); font-size: 14px; margin-top: -10px; margin-bottom: 16px;">📍 ${order.loc_name}</p>
+            <div style="white-space: pre-wrap; margin-bottom: 16px; font-size: 14px; line-height: 1.5; background: var(--secondary-bg); padding: 12px; border-radius: var(--radius);">${order.details}</div>
+            ${order.comment ? `<div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: var(--radius); margin-bottom: 16px; font-size: 13px;">💬 <b>Комментарий:</b> ${order.comment}</div>` : ''}
+            <div style="font-weight: 700; font-size: 18px; border-top: 1px solid #eee; padding-top: 12px; display: flex; justify-content: space-between;">
+                <span>Итого:</span>
+                <span style="color: var(--accent);">${order.total_price || 0} ₽</span>
+            </div>
+            <div style="margin-top: 12px; color: var(--button); font-weight: 600; font-size: 15px; background: rgba(63, 92, 169, 0.1); padding: 10px; border-radius: var(--radius); text-align: center;">
+                🕒 Будет готов к: ${order.ready_time.replace('T', ' ')}
+            </div>
+        `;
+        card.innerHTML = detailsHtml;
+        
+        const cancelBtn = document.getElementById('btn-cancel-order');
+        cancelBtn.style.display = 'block';
+        cancelBtn.onclick = () => cancelMyOrder(order.id);
     });
 }
 
@@ -333,6 +369,11 @@ function cancelMyOrder(orderId) {
 }
 
 tg.MainButton.onClick(() => {
+    if (currentStep === 'menu') { showCart(); return; }
+    if (currentStep === 'cart') { submitOrder(); return; }
+});
+
+function submitOrder() {
     if(!currentLocation) return;
     const selectedTime = document.getElementById('time-picker').value;
     const comment = document.getElementById('order-comment').value;
@@ -348,4 +389,4 @@ tg.MainButton.onClick(() => {
         if(res.success) { tg.showAlert("Заказ успешно отправлен!"); tg.close(); } 
         else { tg.showAlert(res.error || "Ошибка при оформлении"); }
     });
-});
+}

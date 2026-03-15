@@ -74,8 +74,8 @@ module.exports = (db, bot, config) => {
                 }).join('\n');
                 const total = items.reduce((sum, i) => sum + (i.totalItemPrice * i.count), 0);
 
-                db.run("INSERT INTO orders (location_id, tg_id, username, details, comment, ready_time, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-                    [location_id, tg_id, username, details, comment, time, 'new', createdAt], function(err) {
+                db.run("INSERT INTO orders (location_id, tg_id, username, details, comment, ready_time, status, created_at, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                    [location_id, tg_id, username, details, comment, time, 'new', createdAt, total], function(err) {
                         const clientInfo = username ? `@${username}` : `ID: ${tg_id}`;
                         const commentText = comment ? `\n💬 Комментарий: ${comment}` : '';
                         bot.sendMessage(KITCHEN_CHAT_ID, `📍 Точка: ${location.name}\n🔥 НОВЫЙ ЗАКАЗ #${this.lastID}\n👤 Клиент: ${clientInfo}\n\nСостав:\n${details}${commentText}\n\nСумма: ${total} руб.\n⏰ К времени: ${time.replace('T', ' ')}`, 
