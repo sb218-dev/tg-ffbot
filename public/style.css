@@ -1,0 +1,174 @@
+:root {
+    --radius: 12px;
+    --bg: #ffffff; /* Белые карточки */
+    --secondary-bg: #E9EEF5; /* Фирменный фон */
+    --text: #333333;
+    --hint: #888888;
+    --link: #3F5CA9; 
+    --button: #3F5CA9; /* Фирменный синий */
+    --button-text: #ffffff;
+    --accent: #F48C5B; /* Фирменный оранжевый */
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--secondary-bg);
+    color: var(--text);
+    padding: 16px;
+    margin: 0;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+h2 { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--button); }
+h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); }
+
+/* Фирменная шапка с логотипом */
+.brand-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.brand-logo {
+    width: 56px;
+    height: 56px;
+    background: var(--bg);
+    border-radius: 50%;
+    padding: 4px;
+    box-shadow: 0 4px 12px rgba(63, 92, 169, 0.15); /* Синяя тень */
+}
+.brand-text h1 {
+    margin: 0 0 2px 0;
+    font-size: 22px;
+    color: var(--button);
+    font-weight: 800;
+}
+.brand-text span { color: var(--accent); font-size: 14px; font-weight: 600; }
+
+/* Плавная и естественная анимация появления окон */
+.section { animation: smoothEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes smoothEnter { 
+    0% { opacity: 0; transform: translateY(15px); } 
+    100% { opacity: 1; transform: translateY(0); } 
+}
+
+.location-card {
+    background: var(--bg);
+    padding: 16px;
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.location-card:active { transform: scale(0.98); }
+.location-card b { display: block; font-size: 17px; margin-bottom: 4px; }
+.location-card span { color: var(--hint); font-size: 14px; }
+.location-card.disabled { opacity: 0.6; cursor: not-allowed; grayscale: 1; }
+.location-card.disabled .status-tag { color: #eb5757; }
+
+.category-pill {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--bg);
+    border-radius: 20px;
+    margin: 0 8px 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--button);
+    border: 1px solid var(--button);
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.item-card {
+    background: var(--bg);
+    padding: 12px;
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+.item-info { flex-grow: 1; }
+.item-info h4 { margin: 0 0 4px 0; font-size: 16px; }
+.item-info span { font-weight: 700; color: var(--accent); font-size: 15px; }
+
+.add-btn {
+    background: var(--secondary-bg);
+    color: var(--button);
+    border: none;
+    border-radius: 20px;
+    padding: 6px 0;
+    width: 100%;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cart-item {
+    background: var(--secondary-bg);
+    padding: 12px;
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-back {
+    background: none;
+    border: none;
+    color: var(--link);
+    font-weight: 500;
+    padding: 8px 0;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.card-section {
+    background: var(--bg);
+    padding: 16px;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.hidden { display: none !important; }
+
+input, textarea {
+    width: 100%;
+    padding: 12px;
+    background: var(--secondary-bg);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 16px;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+}
+
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 1000; overflow-y: auto; padding: 20px; }
+.addon-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; align-items: center;}
+.modal-btn { width: 100%; padding: 16px; background: var(--button); color: var(--button-text); border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; transition: all 0.15s ease; }
+.cancel-btn { background: var(--hint); margin-top: 10px; }
+
+/* Эффекты пульсации и отклика при нажатии на кнопки */
+.category-pill:active, .add-btn:active, .modal-btn:active, .btn-back:active {
+    transform: scale(0.94);
+    opacity: 0.8;
+}
+.add-btn:active {
+    background: var(--button);
+    color: var(--button-text);
+}

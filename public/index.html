@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чебуречная У Мартина</title>
+    <script src="/telegram-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body ontouchstart="">
+
+    <!-- Фирменный логотип -->
+    <div class="brand-header">
+        <img src="/logo.svg" alt="Логотип" class="brand-logo">
+        <div class="brand-text">
+            <h1>У Мартина</h1>
+            <span>Чебуречная</span>
+        </div>
+    </div>
+
+    <div id="step-locations" class="section">
+        <h2>📍 Выберите заведение</h2>
+        <div id="map" style="width: 100%; height: 250px; border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;"></div>
+        <div id="locations-container">Загрузка...</div>
+        <button id="my-orders-btn-global" class="modal-btn hidden" style="background: var(--accent); color: #fff;" onclick="showMyOrders()">📦 Мои активные заказы</button>
+    </div>
+
+    <div id="step-menu" class="hidden section">
+        <button class="btn-back" onclick="showLocations()">← Сменить заведение</button>
+        <h2 id="menu-loc-title" style="margin-bottom: 12px;">Меню</h2>
+        
+        <div id="search-container" class="hidden" style="margin-bottom: 16px;">
+            <input type="text" id="search-input" placeholder="Поиск блюд..." oninput="onSearchInput(this.value)" style="margin-bottom: 0;">
+        </div>
+
+        <div class="menu-header">
+            <button class="search-btn" onclick="toggleSearch()">🔍</button>
+            <div class="categories-scroll" id="categories-container"></div>
+        </div>
+        
+        <div id="all-items-container"></div>
+    </div>
+
+    <div id="step-cart" class="hidden section">
+        <button class="btn-back" onclick="showMenu()">← К меню</button>
+        <h2>🛒 Корзина</h2>
+        <div class="card-section">
+            <div id="cart-items"></div>
+            <div style="text-align: right; font-weight: 700; font-size: 18px; margin-top: 16px;">Итого: <span id="cart-total-page">0</span> ₽</div>
+        </div>
+    </div>
+
+    <div id="step-my-orders" class="hidden section">
+        <button class="btn-back" onclick="showLocations()">← На главную</button>
+        <h2>Мои заказы</h2>
+        <div id="my-orders-list"></div>
+    </div>
+
+    <div id="step-time" class="hidden section" style="margin-top: 30px; padding-bottom: 50px;">
+        <button class="btn-back" onclick="showCart()">← Вернуться в корзину</button>
+        <div class="card-section">
+            <h3 style="margin-top: 0;">Комментарий к заказу</h3>
+            <textarea id="order-comment" placeholder="Например: без лука, побольше салфеток..."></textarea>
+        </div>
+        
+        <div class="card-section">
+            <h3 style="margin-top: 0;">Укажите время готовности</h3>
+            <p id="time-hint" style="font-size: 14px; color: var(--hint); margin-top: -10px;"></p>
+            <input type="datetime-local" id="time-picker" style="margin-bottom: 0;">
+        </div>
+    </div>
+
+    <div id="addon-modal" class="modal-overlay hidden section">
+        <h2 id="modal-item-name">Название</h2>
+        <p id="modal-hint" style="color: gray;"></p>
+        <div id="modal-addons-list"></div>
+        <button class="modal-btn" onclick="confirmAddToCart()">Добавить в корзину</button>
+        <button class="modal-btn cancel-btn" onclick="closeAddonModal()">Отмена</button>
+    </div>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Зависимости Node.js
+node_modules/
+
+# Секретные ключи и настройки
+config.js
+apidata.txt
+
+# База данных и архивы
+database.sqlite
+database.sqlite-wal
+database.sqlite-shm
+archive/
