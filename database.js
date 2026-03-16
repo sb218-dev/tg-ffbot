@@ -19,7 +19,7 @@ db.serialize(() => {
     // Создаем индексы для быстрого поиска
     db.run("CREATE INDEX IF NOT EXISTS idx_orders_tgid ON orders(tg_id)");
     db.run("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)");
-    db.run("CREATE INDEX IF NOT EXISTS idx_menu_location ON menu(location_id)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_menu_avail_location ON menu_availability(location_id)");
     
     db.get("SELECT count(*) as count FROM locations", (err, row) => {
         if (row.count === 0) {
