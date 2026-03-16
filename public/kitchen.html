@@ -19,9 +19,17 @@
         .btn-warning { background: #ffc107; color: black; }
         .btn-block { width: 100%; margin-bottom: 10px; }
 
-        .order-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; border-left: 5px solid gray; }
+        .order-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; border-left: 6px solid gray; }
         .order-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        .status-new { border-left-color: #ffc107; } .status-ready { border-left-color: #28a745; opacity: 0.6; } .status-cancelled { border-left-color: #dc3545; opacity: 0.6; } 
+        
+        /* Цветовая градация по источникам */
+        .card-yandex { border-left-color: #ffc107; background-color: #fffdf5; }
+        .card-kuper { border-left-color: #28a745; background-color: #f5fff6; }
+        .card-telegram { border-left-color: #0d6efd; background-color: #f5f9ff; }
+        .card-quickresto { border-left-color: #6f42c1; background-color: #fcf5ff; }
+        .card-cancelled { border-left-color: #dc3545; background-color: #fff5f5; opacity: 0.7; }
+        .card-ready { border-left-color: #6c757d; background-color: #f8f9fa; opacity: 0.7; } 
+        
         .details-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .meta-info { font-size: 14px; color: #666; background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
         .comment-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; border-left: 4px solid #ffeeba; margin-bottom: 15px; font-weight: bold;}
@@ -61,7 +69,12 @@
 
     <div id="section-orders">
         <div id="orders-list">
-            <h2>🔥 Поступающие заказы</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin: 0;">🔥 Поступающие заказы</h2>
+                <select id="filter-loc-select" class="btn btn-secondary" style="padding: 8px; border-radius: 6px; background: white; color: black; border: 1px solid #ccc; font-weight: bold;" onchange="renderOrders()">
+                    <option value="all">Все заведения</option>
+                </select>
+            </div>
             <div id="orders-container">Загрузка...</div>
         </div>
 
@@ -73,6 +86,7 @@
                 <div class="meta-info">
                     <p style="margin: 0 0 5px 0;"><strong>🕒 Создан:</strong> <span id="detail-created"></span></p>
                     <p style="margin: 0;"><strong>👤 Клиент:</strong> <span id="detail-tgid"></span></p>
+                    <p style="margin: 5px 0 0 0;"><strong>🌐 Источник:</strong> <span id="detail-source" class="badge"></span></p>
                 </div>
                 <div id="detail-comment" class="comment-box hidden"></div>
                 <p><strong>Статус:</strong> <span id="detail-status"></span></p>
@@ -142,6 +156,9 @@
                     <option value="both">Универсальное (Основное + Добавка)</option>
                 </select>
             </div>
+            <div class="form-group" id="ttk-group" style="display:none;">
+                <button class="btn btn-secondary btn-block" onclick="viewTTK()">📄 Посмотреть ТТК и граммовки</button>
+            </div>
             <button class="btn btn-success btn-block" onclick="saveMenu()">Сохранить</button>
             <button class="btn btn-secondary btn-block" onclick="closeModals()">Отмена</button>
         </div>
@@ -186,6 +203,7 @@
 
         if (tabName === 'menu') { loadLocationsForSelect().then(() => loadMenuData()); }
         if (tabName === 'locations') { loadLocationsData(); }
+        if (tabName === 'orders') { loadLocationsForFilter().then(() => loadOrders()); }
     }
 
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
@@ -194,25 +212,49 @@
     function loadOrders() {
         fetch('/api/orders').then(res => res.json()).then(orders => {
             currentOrders = orders;
-            const container = document.getElementById('orders-container');
-            container.innerHTML = '';
-            if (orders.length === 0) { container.innerHTML = '<p>Пока нет заказов.</p>'; return; }
-
-            orders.forEach(o => {
-                const div = document.createElement('div');
-                let statusClass = o.status === 'ready' ? 'status-ready' : (o.status === 'cancelled' ? 'status-cancelled' : 'status-new');
-                let statusText = o.status === 'ready' ? '✅ Готов' : (o.status === 'cancelled' ? '❌ Отменен' : '🕒 В ожидании');
-                const cMark = o.comment ? ' 💬' : '';
-                div.className = `order-card ${statusClass}`;
-                div.onclick = () => showOrderDetails(o.id);
-                div.innerHTML = `
-                    <h3 style="margin: 0 0 5px 0;">#${o.id}${cMark} <span style="font-size:12px; color:gray; font-weight:normal;">[${o.loc_name}]</span></h3>
-                    <p style="margin: 5px 0;"><strong>К времени:</strong> ${o.ready_time.replace('T', ' ')}</p>
-                    <p style="margin: 5px 0;"><strong>Статус:</strong> ${statusText}</p>
-                `;
-                container.appendChild(div);
-            });
+            renderOrders();
         });
+    }
+
+    function renderOrders() {
+        const container = document.getElementById('orders-container');
+        container.innerHTML = '';
+        const filterLoc = document.getElementById('filter-loc-select').value;
+        
+        const filteredOrders = currentOrders.filter(o => filterLoc === 'all' || o.location_id == filterLoc);
+        if (filteredOrders.length === 0) { container.innerHTML = '<p>Пока нет заказов.</p>'; return; }
+
+        filteredOrders.forEach(o => {
+            const div = document.createElement('div');
+            
+            let statusClass = '';
+            if (o.status === 'cancelled') statusClass = 'card-cancelled';
+            else if (o.status === 'ready') statusClass = 'card-ready';
+            else {
+                if (o.source === 'yandex') statusClass = 'card-yandex';
+                else if (o.source === 'kuper') statusClass = 'card-kuper';
+                else if (o.source === 'quickresto') statusClass = 'card-quickresto';
+                else statusClass = 'card-telegram';
+            }
+            
+            let statusText = o.status === 'ready' ? '✅ Готов' : (o.status === 'cancelled' ? '❌ Отменен' : '🕒 Готовим');
+            const cMark = o.comment ? ' 💬' : '';
+            const sName = getSourceName(o.source);
+
+            div.className = `order-card ${statusClass}`;
+            div.onclick = () => showOrderDetails(o.id);
+            div.innerHTML = `
+                <h3 style="margin: 0 0 5px 0;">#${o.id}${cMark} <span style="font-size:12px; color:gray; font-weight:normal;">[${o.loc_name}]</span></h3>
+                <p style="margin: 5px 0;"><strong>К времени:</strong> ${o.ready_time.replace('T', ' ')} | <span style="font-size: 13px; color: #555;">${sName}</span></p>
+                <p style="margin: 5px 0;"><strong>Статус:</strong> ${statusText}</p>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function getSourceName(source) {
+        const map = { telegram: '🔵 Предзаказ (TG)', yandex: '🟡 Яндекс Еда', kuper: '🟢 Купер', quickresto: '🟣 QuickResto' };
+        return map[source] || source;
     }
 
     function showOrderDetails(id) {
@@ -227,6 +269,15 @@
         document.getElementById('detail-created').innerText = order.created_at || '';
         document.getElementById('detail-tgid').innerText = order.username ? `@${order.username}` : `ID: ${order.tg_id}`;
         
+        const srcBadge = document.getElementById('detail-source');
+        srcBadge.innerText = getSourceName(order.source);
+        srcBadge.className = 'badge';
+        if(order.source === 'yandex') srcBadge.style.background = '#ffc107';
+        else if(order.source === 'kuper') srcBadge.style.background = '#28a745';
+        else if(order.source === 'quickresto') srcBadge.style.background = '#6f42c1';
+        else srcBadge.style.background = '#0d6efd';
+        srcBadge.style.color = (order.source === 'yandex') ? '#000' : '#fff';
+
         const cBox = document.getElementById('detail-comment');
         if (order.comment) { cBox.innerText = `Комментарий: ${order.comment}`; cBox.classList.remove('hidden'); } else cBox.classList.add('hidden');
         
@@ -272,7 +323,7 @@
 
     function showOrderList() { document.getElementById('order-details').classList.add('hidden'); document.getElementById('orders-list').classList.remove('hidden'); loadOrders(); }
     function updateOrderStatus(id, status) { fetch(`/api/orders/${id}/status`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status }) }).then(() => showOrderList()); }
-    loadOrders(); setInterval(loadOrders, 5000);
+    loadLocationsForFilter().then(() => { loadOrders(); setInterval(loadOrders, 5000); });
 
     // ================= 2. ЛОКАЦИИ =================
     function loadLocationsData() {
@@ -298,6 +349,15 @@
             globalLocations = locs;
             const sel = document.getElementById('admin-loc-select');
             sel.innerHTML = '';
+            locs.forEach(l => sel.innerHTML += `<option value="${l.id}">${l.name}</option>`);
+        });
+    }
+
+    function loadLocationsForFilter() {
+        return fetch('/api/admin/locations').then(res => res.json()).then(locs => {
+            globalLocations = locs;
+            const sel = document.getElementById('filter-loc-select');
+            sel.innerHTML = '<option value="all">Все заведения</option>';
             locs.forEach(l => sel.innerHTML += `<option value="${l.id}">${l.name}</option>`);
         });
     }
@@ -363,7 +423,10 @@
         });
     }
 
-    function toggleMenuStatus(id, isAvail) { fetch(`/api/admin/menu/${id}/toggle`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_available: isAvail?1:0 }) }); }
+    function toggleMenuStatus(id, isAvail) { 
+        const locId = document.getElementById('admin-loc-select').value;
+        fetch(`/api/admin/menu/${id}/toggle`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ location_id: locId, is_available: isAvail?1:0 }) }); 
+    }
     function deleteMenuItem(id) { if(confirm("Удалить позицию?")) fetch(`/api/admin/menu/${id}`, { method: 'DELETE' }).then(() => loadMenuData()); }
 
     function openAddModal() {
@@ -371,6 +434,7 @@
         document.getElementById('edit-name').value = ''; document.getElementById('edit-price').value = '';
         document.getElementById('edit-type').value = 'main';
         document.getElementById('menu-modal-title').innerText = 'Новая позиция';
+        document.getElementById('ttk-group').style.display = 'none';
         document.getElementById('menuModal').style.display = 'flex';
     }
 
@@ -382,7 +446,13 @@
         document.getElementById('edit-price').value = item.price;
         document.getElementById('edit-type').value = item.type;
         document.getElementById('menu-modal-title').innerText = 'Редактировать позицию';
+        document.getElementById('ttk-group').style.display = 'block';
         document.getElementById('menuModal').style.display = 'flex';
+    }
+
+    function viewTTK() {
+        const itemName = document.getElementById('edit-name').value;
+        alert(`Открытие документа ТТК для позиции: ${itemName}\n\n(Здесь будет загружен PDF или таблица граммовок из базы)`);
     }
 
     function saveMenu() {

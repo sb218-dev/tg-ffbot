@@ -44,9 +44,11 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // Подключаем роуты
 const adminRoutes = require('./routes/admin')(db, bot);
 const clientRoutes = require('./routes/client')(db, bot, { KITCHEN_CHAT_ID, WEBAPP_URL });
+const integrationRoutes = require('./routes/integrations')(db, bot, config);
 
 app.use('/api', adminRoutes);
 app.use('/api', clientRoutes);
+app.use('/api', integrationRoutes);
 
 setInterval(() => {
     db.all("SELECT id, tg_id, ready_time FROM orders WHERE status = 'new' AND late_notified = 0", [], (err, rows) => {

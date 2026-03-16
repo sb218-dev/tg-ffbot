@@ -3,6 +3,7 @@ node_modules/
 
 # Секретные ключи и настройки
 config.js
+routes/integrations.js
 apidata.txt
 
 # База данных и архивы

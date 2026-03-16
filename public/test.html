@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор тестовых заказов</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f4f6f9; color: #333;}
+        button { display: block; width: 100%; padding: 15px; margin-bottom: 15px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; color: white; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+        .btn-yandex { background: #ffc107; color: black; }
+        .btn-kuper { background: #28a745; }
+        .btn-tg { background: #0d6efd; }
+        .btn-qr { background: #6f42c1; }
+        #log { margin-top: 20px; padding: 15px; background: white; border-radius: 8px; white-space: pre-wrap; font-family: monospace; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: 300px; overflow-y: auto;}
+    </style>
+</head>
+<body>
+    <h2>🛠 Панель тестирования заказов</h2>
+    <p>Нажимайте на кнопки ниже, чтобы сгенерировать фейковые заказы из разных источников. Они мгновенно появятся в панели кухни.</p>
+    
+    <button class="btn-yandex" onclick="sendTest('yandex')">🟡 Тестовый заказ: Яндекс Еда</button>
+    <button class="btn-kuper" onclick="sendTest('kuper')">🟢 Тестовый заказ: Купер</button>
+    <button class="btn-qr" onclick="sendTest('quickresto')">🟣 Тестовый заказ: QuickResto</button>
+    <button class="btn-tg" onclick="sendTest('telegram')">🔵 Тестовый заказ: Telegram (Бот)</button>
+
+    <div id="log">Ожидание действий...</div>
+
+    <script>
+        function sendTest(source) {
+            const endpoint = source === 'telegram' ? '/api/integrations/telegram/test' : `/api/integrations/${source}/webhook`;
+            fetch(endpoint, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => { document.getElementById('log').innerText = `✅ [${new Date().toLocaleTimeString()}] Создан заказ #${data.orderId} (${source})\n` + document.getElementById('log').innerText; })
+                .catch(err => { document.getElementById('log').innerText = `❌ Ошибка: ${err}\n` + document.getElementById('log').innerText; });
+        }
+    </script>
+</body>
+</html>

@@ -16,21 +16,23 @@
     <div class="brand-header">
         <img src="/logo.svg" alt="Логотип" class="brand-logo">
         <div class="brand-text">
-            <h1>У Мартина</h1>
-            <span>Чебуречная</span>
+            <h1>Чебуречная</h1>
+            <span>У Мартина</span>
         </div>
     </div>
 
     <div id="step-locations" class="section">
         <h2>📍 Выберите заведение</h2>
-        <div id="map" style="width: 100%; height: 250px; border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;"></div>
         <div id="locations-container">Загрузка...</div>
-        <button id="my-orders-btn-global" class="modal-btn hidden" style="background: var(--accent); color: #fff;" onclick="showMyOrders()">📦 Мой активный заказ</button>
+        <div id="map" style="width: 100%; height: 250px; border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);"></div>
     </div>
 
     <div id="step-menu" class="hidden section">
         <button class="btn-back" onclick="showLocations()">← Сменить заведение</button>
-        <h2 id="menu-loc-title" style="margin-bottom: 12px;">Меню</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h2 id="menu-loc-title" style="margin: 0;">Меню</h2>
+            <button id="my-orders-btn-global" class="modal-btn hidden" style="background: var(--accent); color: #fff; width: auto; margin: 0; padding: 8px 16px; font-size: 14px;" onclick="showMyOrders()">📦 Мой заказ</button>
+        </div>
         
         <div class="menu-header-wrapper">
             <button class="search-btn" id="btn-open-search" onclick="openSearch()">🔍</button>

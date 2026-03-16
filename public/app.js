@@ -158,7 +158,7 @@ function renderMenu() {
             div.className = 'item-card';
             div.dataset.name = item.name.toLowerCase();
             div.innerHTML = `
-                <img src="/images/${encodeURIComponent(item.name)}.webp" onerror="this.src='https://placehold.co/300x300/E9EEF5/3F5CA9?text=Нет+фото'" class="item-image" alt="${item.name}">
+                <img src="/images/${item.id}.webp" onerror="this.src='https://placehold.co/300x300/E9EEF5/3F5CA9?text=Нет+фото'" class="item-image" alt="${item.name}">
                 <div class="item-info">
                     <h4>${item.name}</h4>
                 </div>
@@ -322,7 +322,7 @@ function updateMainButton(total) {
         else tg.MainButton.hide();
     } else if (currentStep === 'cart') {
         if (total > 0) tg.MainButton.setParams({ text: `ОФОРМИТЬ ЗАКАЗ`, color: '#3F5CA9', text_color: '#ffffff', is_active: true, is_visible: true });
-        else tg.MainButton.setParams({ text: 'КОРЗИНА ПУСТА', color: '#d1d1d6', text_color: '#6c757d', is_active: false, is_visible: true });
+        else tg.MainButton.hide();
     } else {
         tg.MainButton.hide();
     }

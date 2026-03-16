@@ -27,16 +27,16 @@ module.exports = (db, bot, config) => {
 
     router.get('/menu', (req, res) => {
         const locId = req.query.location_id;
-        db.all("SELECT * FROM menu WHERE is_available = 1 AND location_id = ?", [locId], (err, menuItems) => {
+        db.all("SELECT m.* FROM menu m JOIN menu_availability ma ON m.id = ma.menu_id WHERE ma.location_id = ? AND ma.is_available = 1", [locId], (err, menuItems) => {
             if (err) return res.status(500).json({error: err.message});
-            db.all("SELECT ia.main_id, ia.addon_id FROM item_addons ia JOIN menu m ON ia.main_id = m.id WHERE m.location_id = ?", [locId], (err, mappings) => {
+            db.all("SELECT * FROM item_addons", [], (err, mappings) => {
                 const mapDict = {};
                 mappings.forEach(m => {
                     if (!mapDict[m.main_id]) mapDict[m.main_id] = [];
                     mapDict[m.main_id].push(m.addon_id);
                 });
                 menuItems.forEach(item => { if (item.type !== 'addon') item.allowed_addons_ids = mapDict[item.id] || []; });
-                res.json(menuItems);
+                res.json(menuItems || []);
             });
         });
     });
@@ -63,7 +63,7 @@ module.exports = (db, bot, config) => {
             if (allItemIds.length === 0) return res.status(400).json({ error: "Пустая корзина" });
 
             const placeholders = allItemIds.map(() => '?').join(',');
-            db.all(`SELECT name, is_available FROM menu WHERE id IN (${placeholders})`, allItemIds, (err, rows) => {
+            db.all(`SELECT m.name, COALESCE(ma.is_available, 0) as is_available FROM menu m LEFT JOIN menu_availability ma ON m.id = ma.menu_id AND ma.location_id = ? WHERE m.id IN (${placeholders})`, [location_id, ...allItemIds], (err, rows) => {
                 const outOfStock = rows.filter(r => r.is_available === 0);
                 if (outOfStock.length > 0) return res.status(400).json({ error: `Эти позиции закончились: ${outOfStock.map(r => r.name).join(', ')}.` });
 

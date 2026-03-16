@@ -15,16 +15,21 @@ module.exports = (db, bot) => {
     });
 
     router.get('/admin/menu/:location_id', (req, res) => {
-        db.all("SELECT * FROM menu WHERE location_id = ?", [req.params.location_id], (err, menuItems) => {
-            db.all("SELECT ia.* FROM item_addons ia JOIN menu m ON ia.main_id = m.id WHERE m.location_id = ?", [req.params.location_id], (err, mappings) => {
-                res.json({ menu: menuItems, addons: mappings });
+        db.all("SELECT m.*, coalesce(ma.is_available, 0) as is_available FROM menu m LEFT JOIN menu_availability ma ON m.id = ma.menu_id AND ma.location_id = ?", [req.params.location_id], (err, menuItems) => {
+            db.all("SELECT * FROM item_addons", [], (err, mappings) => {
+                res.json({ menu: menuItems || [], addons: mappings || [] });
             });
         });
     });
-    router.post('/admin/menu/:id/toggle', (req, res) => db.run("UPDATE menu SET is_available = ? WHERE id = ?", [req.body.is_available, req.params.id], err => res.json({ success: !err })));
+    router.post('/admin/menu/:id/toggle', (req, res) => {
+        db.run("INSERT OR REPLACE INTO menu_availability (menu_id, location_id, is_available) VALUES (?, ?, ?)", [req.params.id, req.body.location_id, req.body.is_available], err => res.json({ success: !err }));
+    });
     router.post('/admin/menu', (req, res) => {
-        const { location_id, category, name, price, type } = req.body;
-        db.run("INSERT INTO menu (location_id, category, name, price, type) VALUES (?, ?, ?, ?, ?)", [location_id, category, name, price, type], err => res.json({ success: !err }));
+        const { category, name, price, type, location_id } = req.body;
+        db.run("INSERT INTO menu (category, name, price, type) VALUES (?, ?, ?, ?)", [category, name, price, type], function(err) {
+            if (err) return res.json({ success: false });
+            db.run("INSERT INTO menu_availability (menu_id, location_id, is_available) VALUES (?, ?, 1)", [this.lastID, location_id], () => res.json({ success: true }));
+        });
     });
     router.put('/admin/menu/:id', (req, res) => {
         const { name, price, category, type } = req.body;
@@ -33,7 +38,9 @@ module.exports = (db, bot) => {
     router.delete('/admin/menu/:id', (req, res) => {
         const id = req.params.id;
         db.run("DELETE FROM item_addons WHERE main_id = ? OR addon_id = ?", [id, id], () => {
-            db.run("DELETE FROM menu WHERE id = ?", [id], err => res.json({ success: !err }));
+            db.run("DELETE FROM menu_availability WHERE menu_id = ?", [id], () => {
+                db.run("DELETE FROM menu WHERE id = ?", [id], err => res.json({ success: !err }));
+            });
         });
     });
     router.post('/admin/menu/:id/addons', (req, res) => {
@@ -49,7 +56,9 @@ module.exports = (db, bot) => {
     });
 
     // ================= API КУХНИ =================
-    router.get('/orders', (req, res) => db.all("SELECT o.*, l.name as loc_name FROM orders o JOIN locations l ON o.location_id = l.id ORDER BY o.id DESC", [], (err, rows) => res.json(rows)));
+    router.get('/orders', (req, res) => {
+        db.all("SELECT o.*, l.name as loc_name FROM orders o JOIN locations l ON o.location_id = l.id ORDER BY CASE WHEN o.status = 'new' THEN 1 WHEN o.status = 'ready' THEN 2 ELSE 3 END, o.id ASC", [], (err, rows) => res.json(rows || []));
+    });
     router.post('/orders/:id/status', (req, res) => {
         db.run("UPDATE orders SET status = ? WHERE id = ?", [req.body.status, req.params.id], function() {
             db.get("SELECT tg_id FROM orders WHERE id = ?", [req.params.id], (err, row) => {
