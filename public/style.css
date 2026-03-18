@@ -50,10 +50,10 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 .brand-text h1 {
     margin: 0 0 2px 0;
     font-size: 22px;
-    color: var(--accent);
+    color: var(--button);
     font-weight: 800;
 }
-.brand-text span { color: var(--button); font-size: 14px; font-weight: 600; }
+.brand-text span { color: var(--accent); font-size: 14px; font-weight: 600; }
 
 /* Плавная и естественная анимация появления окон */
 .section { animation: smoothEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -86,7 +86,7 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     font-size: 14px;
     font-weight: 600;
     color: var(--button);
-    border: 1px solid var(--button);
+    border: 1px solid var(--accent);
     transition: all 0.15s ease;
     cursor: pointer;
     white-space: nowrap;
@@ -143,7 +143,7 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 
 .price-btn {
     background: var(--button);
-    color: var(--number-color);
+    color: #ffffff;
     border: none;
     border-radius: 8px;
     padding: 5px 0;
@@ -222,7 +222,7 @@ input, textarea {
 .addon-price { font-weight: 700; font-size: 14px; color: var(--number-color); }
 
 /* Кнопка и блок описания товара в модалке */
-.desc-btn { background: none; border: none; color: var(--button); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; }
+.desc-btn { background: none; border: none; color: var(--accent); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; }
 .desc-btn:active { transform: scale(0.9); opacity: 0.8; }
 .item-desc-text { 
     font-size: 14px; 
