@@ -105,7 +105,7 @@ function selectLocation(loc, savePreference = true) {
         fetch(`/api/users/${tgUserId}/location`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ location_id: loc.id }) });
     }
     
-    document.getElementById('menu-loc-title').innerHTML = `Меню <span style="color: var(--accent);">(${loc.name})</span>`;
+    document.getElementById('menu-loc-title').innerHTML = `<span style="color: var(--accent);">${loc.name}</span>`;
     document.getElementById('time-hint').innerText = `Часы работы: ${loc.open_time} - ${loc.close_time}`;
     
     const timePicker = document.getElementById('time-picker');
