@@ -13,7 +13,7 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--secondary-bg);
+    background-color: #ffffff;
     background-image: url('/image/back.webp');
     background-repeat: repeat;
     background-size: 150px;
@@ -95,14 +95,14 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 }
 
 .menu-header-wrapper {
-    position: sticky; top: 0; background: var(--secondary-bg); z-index: 10; padding: 10px 0; margin-bottom: 16px;
+    position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; margin-bottom: 16px;
     display: flex; gap: 12px; align-items: center; /* Выравнивание отступов между лупой и категориями */
 }
 
 .categories-scroll {
     display: flex; overflow-x: auto; scrollbar-width: none; gap: 8px;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 15px), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(100% - 15px), transparent 100%);
     flex-grow: 1;
 }
 .categories-scroll::-webkit-scrollbar { display: none; }
@@ -142,11 +142,11 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 .item-info h4 { margin: 0; font-size: 11px; line-height: 1.2; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
 
 .price-btn {
-    background: var(--bg);
+    background: var(--button);
     color: var(--number-color);
-    border: 1px solid var(--number-color); /* Синяя рамка и текст для цены */
+    border: none;
     border-radius: 8px;
-    padding: 4px 0;
+    padding: 5px 0;
     width: 100%;
     text-align: center;
     font-weight: 700;
@@ -155,7 +155,7 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     transition: all 0.15s ease;
     margin-top: auto;
 }
-.price-btn:active { transform: scale(0.94); background: var(--number-color); color: #ffffff; }
+.price-btn:active { transform: scale(0.94); opacity: 0.8; }
 
 .cart-item-btn { background: none; border: none; color: var(--hint); font-size: 18px; cursor: pointer; padding: 4px 10px; }
 .cart-item-btn:active { transform: scale(0.94); opacity: 0.8; }
@@ -219,7 +219,7 @@ input, textarea {
 .addon-box.selected { background: #dbe4f0; border-color: var(--button); }
 .addon-box input { display: none; }
 .addon-name { font-weight: 600; font-size: 14px; color: var(--text); }
-.addon-price { font-weight: 700; font-size: 14px; color: var(--button); }
+.addon-price { font-weight: 700; font-size: 14px; color: var(--number-color); }
 
 /* Кнопка и блок описания товара в модалке */
 .desc-btn { background: none; border: none; color: var(--button); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; }

@@ -2,8 +2,8 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 
 // Красим рамки самого окна Telegram под наш новый фон
-tg.setBackgroundColor('#FFF3EB');
-tg.setHeaderColor('#FFF3EB');
+tg.setBackgroundColor('#ffffff');
+tg.setHeaderColor('#ffffff');
 
 let locationsData = [];
 let currentLocation = null;
