@@ -25,15 +25,15 @@ module.exports = (db, bot) => {
         db.run("INSERT OR REPLACE INTO menu_availability (menu_id, location_id, is_available) VALUES (?, ?, ?)", [req.params.id, req.body.location_id, req.body.is_available], err => res.json({ success: !err }));
     });
     router.post('/admin/menu', (req, res) => {
-        const { category, name, price, type, location_id } = req.body;
-        db.run("INSERT INTO menu (category, name, price, type) VALUES (?, ?, ?, ?)", [category, name, price, type], function(err) {
+        const { category, name, price, type, location_id, description } = req.body;
+        db.run("INSERT INTO menu (category, name, price, type, description) VALUES (?, ?, ?, ?, ?)", [category, name, price, type, description || ''], function(err) {
             if (err) return res.json({ success: false });
             db.run("INSERT INTO menu_availability (menu_id, location_id, is_available) VALUES (?, ?, 1)", [this.lastID, location_id], () => res.json({ success: true }));
         });
     });
     router.put('/admin/menu/:id', (req, res) => {
-        const { name, price, category, type } = req.body;
-        db.run("UPDATE menu SET name = ?, price = ?, category = ?, type = ? WHERE id = ?", [name, price, category, type, req.params.id], err => res.json({ success: !err }));
+        const { name, price, category, type, description } = req.body;
+        db.run("UPDATE menu SET name = ?, price = ?, category = ?, type = ?, description = ? WHERE id = ?", [name, price, category, type, description || '', req.params.id], err => res.json({ success: !err }));
     });
     router.delete('/admin/menu/:id', (req, res) => {
         const id = req.params.id;

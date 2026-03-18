@@ -15,6 +15,7 @@ db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS users (tg_id TEXT PRIMARY KEY, username TEXT, phone TEXT, last_location_id INTEGER, points INTEGER DEFAULT 0)");
     db.run("ALTER TABLE orders ADD COLUMN total_price INTEGER DEFAULT 0", (err) => { /* Игнорируем ошибку, если колонка уже существует */ });
     db.run("ALTER TABLE orders ADD COLUMN source TEXT DEFAULT 'telegram'", (err) => { /* Игнорируем ошибку */ });
+    db.run("ALTER TABLE menu ADD COLUMN description TEXT DEFAULT ''", (err) => { /* Игнорируем ошибку */ });
 
     // Создаем индексы для быстрого поиска
     db.run("CREATE INDEX IF NOT EXISTS idx_orders_tgid ON orders(tg_id)");

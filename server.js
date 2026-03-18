@@ -1,5 +1,6 @@
 const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
+const { SocksProxyAgent } = require('socks-proxy-agent');
 const path = require('path');
 const cors = require('cors');
 const basicAuth = require('express-basic-auth');
@@ -16,7 +17,14 @@ const KITCHEN_CHAT_ID = config.KITCHEN_CHAT_ID;
 
 const PORT = 3000;
 const app = express();
-const bot = new TelegramBot(TOKEN, { polling: true });
+
+const botOptions = { polling: true };
+if (config.PROXY_URL) {
+    const agent = new SocksProxyAgent(config.PROXY_URL);
+    botOptions.request = { agent: agent };
+    console.log('🌐 Бот использует SOCKS5 прокси');
+}
+const bot = new TelegramBot(TOKEN, botOptions);
 
 // 1. Базовые настройки (парсинг JSON и CORS)
 app.use(express.json());

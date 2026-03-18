@@ -35,7 +35,9 @@
         </div>
         
         <div class="menu-header-wrapper">
-            <button class="search-btn" id="btn-open-search" onclick="openSearch()">🔍</button>
+            <button class="search-btn" id="btn-open-search" onclick="openSearch()">
+                <img src="/search.svg" alt="Поиск" width="18" height="18" style="pointer-events: none;">
+            </button>
             <div class="search-input-wrapper" id="search-wrapper">
                 <input type="text" class="search-input-pill" id="search-input" placeholder="Поиск блюд..." oninput="onSearchInput(this.value)">
                 <button class="close-search-btn" onclick="closeSearch()">✕</button>
@@ -76,8 +78,16 @@
     </div>
 
     <div id="addon-modal" class="modal-overlay hidden section">
-        <h2 id="modal-item-name">Название</h2>
-        <p id="modal-hint" style="color: var(--hint); font-size: 14px; margin-top:-10px;"></p>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h2 id="modal-item-name" style="margin-bottom: 4px; margin-top: 0;">Название</h2>
+                <p id="modal-hint" style="color: var(--hint); font-size: 14px; margin-top:0;"></p>
+            </div>
+            <button id="modal-info-btn" class="desc-btn hidden" onclick="toggleDescription()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </button>
+        </div>
+        <div id="modal-item-desc" class="item-desc-text hidden"></div>
         <div id="modal-addons-list" class="addon-grid"></div>
         <button class="modal-btn" id="btn-confirm-addons" onclick="confirmAddToCart()">Добавить в корзину</button>
         <button class="modal-btn cancel-btn" onclick="closeAddonModal()">Отмена</button>

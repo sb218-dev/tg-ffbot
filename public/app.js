@@ -2,8 +2,8 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 
 // Красим рамки самого окна Telegram под наш новый фон
-tg.setBackgroundColor('#E9EEF5');
-tg.setHeaderColor('#E9EEF5');
+tg.setBackgroundColor('#FFF3EB');
+tg.setHeaderColor('#FFF3EB');
 
 let locationsData = [];
 let currentLocation = null;
@@ -157,12 +157,13 @@ function renderMenu() {
             const div = document.createElement('div');
             div.className = 'item-card';
             div.dataset.name = item.name.toLowerCase();
+            div.onclick = () => openAddonModal(item.id);
             div.innerHTML = `
                 <img src="/images/${item.id}.webp" onerror="this.src='https://placehold.co/300x300/E9EEF5/3F5CA9?text=Нет+фото'" class="item-image" alt="${item.name}">
                 <div class="item-info">
                     <h4>${item.name}</h4>
                 </div>
-                <button class="price-btn" onclick="openAddonModal(${item.id})">${item.price} ₽</button>
+                <button class="price-btn" onclick="event.stopPropagation(); directAddBaseItem(${item.id})">${item.price} ₽</button>
             `;
             grid.appendChild(div);
         });
@@ -222,6 +223,17 @@ function openAddonModal(itemId) {
 
     if (availableAddons.length === 0) { confirmDirectAddToCart(item); return; }
 
+    // Настраиваем описание блюда
+    const infoBtn = document.getElementById('modal-info-btn');
+    const descBlock = document.getElementById('modal-item-desc');
+    descBlock.classList.add('hidden'); // Скрываем по умолчанию при открытии
+    if (item.description && item.description.trim() !== '') {
+        infoBtn.classList.remove('hidden');
+        descBlock.innerText = item.description;
+    } else {
+        infoBtn.classList.add('hidden');
+    }
+
     document.getElementById('modal-item-name').innerText = item.name;
     document.getElementById('modal-hint').innerText = item.name.includes('Комбо') ? "Выберите 1 чебурек и 1 напиток:" : "Выберите добавки/соусы:";
 
@@ -243,6 +255,16 @@ function openAddonModal(itemId) {
     updateAddonModalPrice();
     document.getElementById('step-menu').classList.add('hidden');
     document.getElementById('addon-modal').classList.remove('hidden');
+}
+
+function toggleDescription() {
+    document.getElementById('modal-item-desc').classList.toggle('hidden');
+    tg.HapticFeedback.selectionChanged();
+}
+
+function directAddBaseItem(itemId) {
+    const item = menuData.find(i => i.id === itemId);
+    if(item) confirmDirectAddToCart(item);
 }
 
 function toggleAddon(boxElement) {
@@ -318,10 +340,10 @@ function updateMainButton(total) {
     }
 
     if (currentStep === 'menu') {
-        if (total > 0) tg.MainButton.setParams({ text: `В КОРЗИНУ (${total} ₽)`, color: '#3F5CA9', text_color: '#ffffff', is_active: true, is_visible: true });
+        if (total > 0) tg.MainButton.setParams({ text: `В КОРЗИНУ (${total} ₽)`, color: '#F48C5B', text_color: '#ffffff', is_active: true, is_visible: true });
         else tg.MainButton.hide();
     } else if (currentStep === 'cart') {
-        if (total > 0) tg.MainButton.setParams({ text: `ОФОРМИТЬ ЗАКАЗ`, color: '#3F5CA9', text_color: '#ffffff', is_active: true, is_visible: true });
+        if (total > 0) tg.MainButton.setParams({ text: `ОФОРМИТЬ ЗАКАЗ`, color: '#F48C5B', text_color: '#ffffff', is_active: true, is_visible: true });
         else tg.MainButton.hide();
     } else {
         tg.MainButton.hide();

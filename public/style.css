@@ -1,13 +1,14 @@
 :root {
     --radius: 12px;
     --bg: #ffffff; /* Белые карточки */
-    --secondary-bg: #E9EEF5; /* Фирменный фон */
+    --secondary-bg: #FFF3EB; /* Более теплый, "вкусный" фон */
     --text: #333333;
     --hint: #888888;
-    --link: #3F5CA9; 
-    --button: #3F5CA9; /* Фирменный синий */
+    --link: #F48C5B; 
+    --button: #F48C5B; /* Фирменный оранжевый теперь основной */
     --button-text: #ffffff;
-    --accent: #F48C5B; /* Фирменный оранжевый */
+    --accent: #3F5CA9; /* Фирменный синий для цифр и цен */
+    --number-color: #3F5CA9;
 }
 
 body {
@@ -36,13 +37,15 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     margin-bottom: 20px;
 }
 .brand-logo {
-    width: 56px;
-    height: 56px;
+    width: 68px; /* Чуть увеличили для лучшей читаемости мелких деталей */
+    height: 68px;
+    flex-shrink: 0; /* Запрещаем логотипу сплющиваться на узких экранах */
+    object-fit: contain; /* Гарантируем, что SVG-картинка масштабируется пропорционально */
     background: var(--bg);
     border-radius: 50%;
-    padding: 4px;
+    padding: 6px;
     box-shadow: 0 4px 12px rgba(63, 92, 169, 0.15); /* Синяя тень */
-    background-color: var(--bg);
+    box-sizing: border-box; /* Теперь padding не ломает общие габариты 68x68 */
 }
 .brand-text h1 {
     margin: 0 0 2px 0;
@@ -93,14 +96,14 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 
 .menu-header-wrapper {
     position: sticky; top: 0; background: var(--secondary-bg); z-index: 10; padding: 10px 0; margin-bottom: 16px;
-    display: flex; gap: 8px; align-items: center;
+    display: flex; gap: 12px; align-items: center; /* Выравнивание отступов между лупой и категориями */
 }
 
 .categories-scroll {
     display: flex; overflow-x: auto; scrollbar-width: none; gap: 8px;
     -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
     mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
-    flex-grow: 1; padding: 0 15px;
+    flex-grow: 1;
 }
 .categories-scroll::-webkit-scrollbar { display: none; }
 
@@ -118,7 +121,7 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 }
 .close-search-btn { background: none; border: none; color: var(--hint); font-size: 18px; margin-left: 8px; padding: 0 4px; cursor: pointer; }
 
-.category-section { margin-bottom: 24px; scroll-margin-top: 60px; }
+.category-section { margin-bottom: 28px; scroll-margin-top: 60px; } /* Увеличили отступ между категориями */
 .category-section h3 { margin-top: 0; margin-bottom: 12px; }
 .items-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 
@@ -132,15 +135,16 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     text-align: center;
     box-shadow: 0 1px 4px rgba(0,0,0,0.03);
     margin: 0;
+    cursor: pointer;
 }
 .item-image { width: 100%; height: 110px; object-fit: cover; border-radius: 8px; margin-bottom: 6px; background: var(--secondary-bg); }
 .item-info { flex-grow: 1; display: flex; flex-direction: column; width: 100%; align-items: center; justify-content: flex-start; margin-bottom: 6px; }
 .item-info h4 { margin: 0; font-size: 11px; line-height: 1.2; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
 
 .price-btn {
-    background: var(--secondary-bg);
-    color: var(--button);
-    border: 1px solid var(--button);
+    background: var(--bg);
+    color: var(--number-color);
+    border: 1px solid var(--number-color); /* Синяя рамка и текст для цены */
     border-radius: 8px;
     padding: 4px 0;
     width: 100%;
@@ -151,7 +155,7 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     transition: all 0.15s ease;
     margin-top: auto;
 }
-.price-btn:active { transform: scale(0.94); background: var(--button); color: var(--button-text); }
+.price-btn:active { transform: scale(0.94); background: var(--number-color); color: #ffffff; }
 
 .cart-item-btn { background: none; border: none; color: var(--hint); font-size: 18px; cursor: pointer; padding: 4px 10px; }
 .cart-item-btn:active { transform: scale(0.94); opacity: 0.8; }
@@ -216,6 +220,19 @@ input, textarea {
 .addon-box input { display: none; }
 .addon-name { font-weight: 600; font-size: 14px; color: var(--text); }
 .addon-price { font-weight: 700; font-size: 14px; color: var(--button); }
+
+/* Кнопка и блок описания товара в модалке */
+.desc-btn { background: none; border: none; color: var(--button); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; }
+.desc-btn:active { transform: scale(0.9); opacity: 0.8; }
+.item-desc-text { 
+    font-size: 14px; 
+    color: var(--text); 
+    background: var(--secondary-bg); 
+    padding: 12px; 
+    border-radius: 8px; 
+    margin-bottom: 16px; 
+    line-height: 1.4; 
+}
 
 /* Эффекты пульсации и отклика при нажатии на кнопки */
 .category-pill:active, .modal-btn:active, .btn-back:active, .search-btn:active {
