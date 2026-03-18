@@ -37,23 +37,24 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     margin-bottom: 20px;
 }
 .brand-logo {
-    width: 68px; /* Чуть увеличили для лучшей читаемости мелких деталей */
-    height: 68px;
+    width: clamp(50px, 16vw, 68px); /* Плавное изменение размера от 50px до 68px */
+    height: auto;
+    aspect-ratio: 1 / 1; /* Всегда сохраняем идеальный круг */
     flex-shrink: 0; /* Запрещаем логотипу сплющиваться на узких экранах */
     object-fit: contain; /* Гарантируем, что SVG-картинка масштабируется пропорционально */
     background: var(--bg);
     border-radius: 50%;
-    padding: 6px;
+    padding: clamp(4px, 1.5vw, 6px); /* Адаптивные отступы внутри круга */
     box-shadow: 0 4px 12px rgba(63, 92, 169, 0.15); /* Синяя тень */
     box-sizing: border-box; /* Теперь padding не ломает общие габариты 68x68 */
 }
 .brand-text h1 {
     margin: 0 0 2px 0;
-    font-size: 22px;
+    font-size: clamp(18px, 6vw, 22px); /* Заголовок аккуратно сжимается на узких экранах */
     color: var(--button);
     font-weight: 800;
 }
-.brand-text span { color: var(--accent); font-size: 14px; font-weight: 600; }
+.brand-text span { color: var(--accent); font-size: clamp(12px, 3.5vw, 14px); font-weight: 600; }
 
 /* Плавная и естественная анимация появления окон */
 .section { animation: smoothEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
