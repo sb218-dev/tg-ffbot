@@ -37,7 +37,7 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     margin-bottom: 20px;
 }
 .brand-logo {
-    width: clamp(55px, 17.6vw, 75px); /* Плавное изменение размера, увеличено на 10% */
+    width: clamp(63px, 20vw, 86px); /* Плавное изменение размера, увеличено ещё на 15% */
     height: auto;
     aspect-ratio: 1 / 1; /* Всегда сохраняем идеальный круг */
     flex-shrink: 0; /* Запрещаем логотипу сплющиваться на узких экранах */
@@ -101,9 +101,9 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 }
 
 .categories-scroll {
-    display: flex; overflow-x: auto; scrollbar-width: none; gap: 8px;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
+    display: flex; overflow-x: auto; scrollbar-width: none; gap: 8px; padding: 2px 0;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 15px), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(100% - 15px), transparent 100%);
     flex-grow: 1;
 }
 .categories-scroll::-webkit-scrollbar { display: none; }
