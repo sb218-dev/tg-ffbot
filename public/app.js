@@ -15,12 +15,6 @@ let currentStep = 'locations';
 const tgUserId = tg.initDataUnsafe?.user?.id || 'test_user';
 const tgUsername = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || '';
 
-// Координаты заведений
-const locationCoords = {
-    'Московское шоссе 13жд': [59.827724, 30.346403],
-    'проспект Пятилеток 8': [59.922075, 30.459518]
-};
-
 let myMap;
 let markersAdded = false;
 let isMapLoading = false;
@@ -48,14 +42,22 @@ function loadYandexMaps() {
 function addMarkers() {
     if (!myMap || markersAdded || locationsData.length === 0) return;
     locationsData.forEach(loc => {
-        const locName = loc.name ? loc.name.trim() : '';
-        const coords = locationCoords[locName];
+        const locName = loc.name ? loc.name.toLowerCase() : '';
+        let coords = null;
+        
+        // Гибкий поиск по названию, чтобы исключить проблемы со скрытыми пробелами или кодировкой
+        if (locName.includes('чебуречная') || locName.includes('13')) {
+            coords = [59.827724, 30.346403];
+        } else if (locName.includes('чебуречная') || locName.includes('8')) {
+            coords = [59.922075, 30.459518];
+        }
+
         if (coords) {
             const placemark = new ymaps.Placemark(coords, {
                 balloonContent: `<b>${loc.name}</b><br>🕒 Открыто с ${loc.open_time} до ${loc.close_time}`,
                 hintContent: loc.name
             }, {
-                preset: loc.is_active ? 'islands#blueDotIcon' : 'islands#grayDotIcon'
+                preset: loc.is_active ? 'islands#blueIcon' : 'islands#grayIcon'
             });
             if (loc.is_active) placemark.events.add('click', () => selectLocation(loc));
             myMap.geoObjects.add(placemark);

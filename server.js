@@ -33,8 +33,11 @@ app.use(cors());
 app.use(compression());
 
 // 2. Создаем "вышибалу"
+const adminUser = config.ADMIN_USER || 'admin';
+const adminPass = config.ADMIN_PASS || 'secret';
+
 const adminAuth = basicAuth({
-    users: { 'PIDIDI': 'EPSTEIN' },
+    users: { [adminUser]: adminPass },
     challenge: true,
     realm: 'Admin Panel'
 });
