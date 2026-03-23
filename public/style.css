@@ -37,7 +37,7 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     margin-bottom: 20px;
 }
 .brand-logo {
-    width: clamp(50px, 16vw, 68px); /* Плавное изменение размера от 50px до 68px */
+    width: clamp(55px, 17.6vw, 75px); /* Плавное изменение размера, увеличено на 10% */
     height: auto;
     aspect-ratio: 1 / 1; /* Всегда сохраняем идеальный круг */
     flex-shrink: 0; /* Запрещаем логотипу сплющиваться на узких экранах */
@@ -102,14 +102,14 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 
 .categories-scroll {
     display: flex; overflow-x: auto; scrollbar-width: none; gap: 8px;
-    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 15px), transparent 100%);
-    mask-image: linear-gradient(to right, black 0%, black calc(100% - 15px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
     flex-grow: 1;
 }
 .categories-scroll::-webkit-scrollbar { display: none; }
 
 .search-btn {
-    background: var(--bg); color: var(--button); border: 1px solid var(--button);
+    background: var(--bg); color: var(--accent); border: 1px solid var(--accent);
     border-radius: 20px; height: 32px; padding: 0 14px; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; font-size: 14px; font-weight: 600; transition: all 0.15s ease; margin: 0;
 }

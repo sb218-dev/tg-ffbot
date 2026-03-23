@@ -50,7 +50,7 @@ module.exports = (db, bot, config) => {
 
             const orderTimeMs = new Date(time + '+03:00').getTime();
             const nowMs = Date.now();
-            if (orderTimeMs < nowMs + 19 * 60 * 1000 || orderTimeMs > nowMs + 48 * 60 * 60 * 1000) return res.status(400).json({ error: "Недопустимое время (мин 20 минут, макс 2 суток)" });
+            if (orderTimeMs < nowMs + 9 * 60 * 1000 || orderTimeMs > nowMs + 48 * 60 * 60 * 1000) return res.status(400).json({ error: "Недопустимое время (мин 10 минут, макс 2 суток)" });
 
             const orderDate = new Date(time + '+03:00');
             const orderTimeFloat = orderDate.getHours() + (orderDate.getMinutes() / 60);
@@ -80,7 +80,7 @@ module.exports = (db, bot, config) => {
                         const commentText = comment ? `\n💬 Комментарий: ${comment}` : '';
                         bot.sendMessage(KITCHEN_CHAT_ID, `📍 Точка: ${location.name}\n🔥 НОВЫЙ ЗАКАЗ #${this.lastID}\n👤 Клиент: ${clientInfo}\n\nСостав:\n${details}${commentText}\n\nСумма: ${total} руб.\n⏰ К времени: ${time.replace('T', ' ')}`, 
                             { reply_markup: { inline_keyboard: [[ { text: "👨‍🍳 Открыть панель кухни", url: `${WEBAPP_URL}/kitchen.html` } ]] } }
-                        );
+                        ).catch(err => console.error('[Telegram Bot] Ошибка отправки заказа в чат кухни. Проверьте KITCHEN_CHAT_ID и права бота:', err.message));
                         res.json({ success: true, orderId: this.lastID });
                 });
             });

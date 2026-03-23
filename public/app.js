@@ -61,6 +61,14 @@ function addMarkers() {
         }
     });
     markersAdded = true;
+            
+            // Фикс: принудительно обновляем размеры и центрируем карту по добавленным меткам
+            myMap.container.fitToViewport();
+            if (myMap.geoObjects.getLength() > 0) {
+                myMap.setBounds(myMap.geoObjects.getBounds(), { checkZoomRange: true, zoomMargin: 20 }).then(() => {
+                    if (myMap.getZoom() > 14) myMap.setZoom(14);
+                });
+            }
 }
 
 Promise.all([
@@ -110,7 +118,7 @@ function selectLocation(loc, savePreference = true) {
     
     const timePicker = document.getElementById('time-picker');
     const nowSPb = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
-    const minTime = new Date(nowSPb.getTime() + 20 * 60000); 
+    const minTime = new Date(nowSPb.getTime() + 10 * 60000); 
     const maxTime = new Date(nowSPb.getTime() + 48 * 3600000); 
     const formatForInput = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     timePicker.min = formatForInput(minTime); timePicker.max = formatForInput(maxTime); timePicker.value = formatForInput(minTime);
