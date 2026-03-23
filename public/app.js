@@ -29,7 +29,7 @@ function loadYandexMaps() {
     script.onload = () => {
         ymaps.ready(() => {
             myMap = new ymaps.Map("map", {
-                center: [59.874, 30.402], // Приблизительный центр между точками
+                center: [59.9386, 30.3141], // Центр Санкт-Петербурга
                 zoom: 11,
                 controls: ['zoomControl']
             });
