@@ -48,13 +48,14 @@ function loadYandexMaps() {
 function addMarkers() {
     if (!myMap || markersAdded || locationsData.length === 0) return;
     locationsData.forEach(loc => {
-        const coords = locationCoords[loc.name];
+        const locName = loc.name ? loc.name.trim() : '';
+        const coords = locationCoords[locName];
         if (coords) {
             const placemark = new ymaps.Placemark(coords, {
                 balloonContent: `<b>${loc.name}</b><br>🕒 Открыто с ${loc.open_time} до ${loc.close_time}`,
                 hintContent: loc.name
             }, {
-                preset: loc.is_active ? 'islands#blueFoodIcon' : 'islands#grayFoodIcon'
+                preset: loc.is_active ? 'islands#blueDotIcon' : 'islands#grayDotIcon'
             });
             if (loc.is_active) placemark.events.add('click', () => selectLocation(loc));
             myMap.geoObjects.add(placemark);
@@ -62,13 +63,18 @@ function addMarkers() {
     });
     markersAdded = true;
             
-            // Фикс: принудительно обновляем размеры и центрируем карту по добавленным меткам
+    // Фикс: принудительно обновляем размеры и центрируем карту с задержкой, чтобы DOM успел отрисоваться
+    setTimeout(() => {
+        if (myMap && myMap.geoObjects.getLength() > 0) {
             myMap.container.fitToViewport();
-            if (myMap.geoObjects.getLength() > 0) {
-                myMap.setBounds(myMap.geoObjects.getBounds(), { checkZoomRange: true, zoomMargin: 20 }).then(() => {
-                    if (myMap.getZoom() > 14) myMap.setZoom(14);
-                });
+            const bounds = myMap.geoObjects.getBounds();
+            if (bounds) {
+                myMap.setBounds(bounds, { checkZoomRange: true, zoomMargin: 20 }).then(() => {
+                    if (myMap.getZoom() > 15) myMap.setZoom(15);
+                }).catch(() => {});
             }
+        }
+    }, 300);
 }
 
 Promise.all([

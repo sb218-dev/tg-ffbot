@@ -101,9 +101,9 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
 }
 
 .categories-scroll {
-    display: flex; overflow-x: auto; scrollbar-width: none; gap: 8px; padding: 2px 0;
-    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 15px), transparent 100%);
-    mask-image: linear-gradient(to right, black 0%, black calc(100% - 15px), transparent 100%);
+    display: flex; overflow-x: auto; scrollbar-width: none; gap: 8px; padding: 2px 0 2px 12px; margin-left: -12px;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12px, black calc(100% - 15px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 12px, black calc(100% - 15px), transparent 100%);
     flex-grow: 1;
 }
 .categories-scroll::-webkit-scrollbar { display: none; }
