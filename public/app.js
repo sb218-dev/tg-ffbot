@@ -350,8 +350,6 @@ function updateCartUI() {
 }
 
 function updateMainButton(total) {
-    const isTelegramEnv = !!tg.initDataUnsafe.user;
-
     if (total === undefined) {
         total = 0;
         Object.values(cart).forEach(i => { if(i.count > 0) total += i.totalItemPrice * i.count; });
@@ -359,7 +357,6 @@ function updateMainButton(total) {
 
     const fallbackBtnContainer = document.getElementById('fallback-cart-btn');
     const fallbackBtn = document.getElementById('fallback-cart-btn-inner');
-
     const showButton = total > 0 && (currentStep === 'menu' || currentStep === 'cart');
     let buttonText = '';
     let buttonAction = () => {};
@@ -369,25 +366,17 @@ function updateMainButton(total) {
         buttonAction = () => showCart();
     } else if (currentStep === 'cart') {
         buttonText = `ОФОРМИТЬ ЗАКАЗ`;
-        buttonAction = () => submitOrder();
+        buttonAction = () => submitOrder(); // Действие для кнопки "Оформить"
     }
 
-    if (isTelegramEnv) {
-        fallbackBtnContainer.classList.add('hidden');
-        if (showButton) {
-            tg.MainButton.setParams({ text: buttonText, color: '#F48C5B', text_color: '#ffffff', is_active: true, is_visible: true });
-        } else {
-            tg.MainButton.hide();
-        }
+    tg.MainButton.hide(); // Всегда скрываем нативную кнопку Telegram
+
+    if (showButton) {
+        fallbackBtnContainer.classList.remove('hidden');
+        fallbackBtn.innerText = buttonText;
+        fallbackBtn.onclick = buttonAction;
     } else {
-        tg.MainButton.hide();
-        if (showButton) {
-            fallbackBtnContainer.classList.remove('hidden');
-            fallbackBtn.innerText = buttonText;
-            fallbackBtn.onclick = buttonAction;
-        } else {
-            fallbackBtnContainer.classList.add('hidden');
-        }
+        fallbackBtnContainer.classList.add('hidden');
     }
 }
 

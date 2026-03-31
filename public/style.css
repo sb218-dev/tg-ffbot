@@ -49,7 +49,7 @@ h3 { font-size: 18px; font-weight: 600; margin-top: 24px; color: var(--button); 
     box-sizing: border-box; /* Теперь padding не ломает общие габариты 68x68 */
 }
 .brand-text-logo {
-    height: clamp(35px, 10vw, 50px);
+    height: clamp(45px, 12vw, 60px);
     width: auto;
     display: block;
 }
