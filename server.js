@@ -26,6 +26,16 @@ if (config.PROXY_URL) {
 }
 const bot = new TelegramBot(TOKEN, botOptions);
 
+bot.on('polling_error', (error) => {
+    console.log('❌ Ошибка Telegram Polling:', error.code, error.message);
+});
+
+bot.getMe().then((me) => {
+    console.log(`✅ Бот @${me.username} успешно связался с Telegram!`);
+}).catch((err) => {
+    console.log(`❌ Ошибка связи с Telegram:`, err.message);
+});
+
 // 1. Базовые настройки (парсинг JSON и CORS)
 app.use(express.json());
 app.use(cors());
@@ -69,7 +79,9 @@ setInterval(() => {
             const readyTimestamp = new Date(order.ready_time + '+03:00').getTime();
             if (now > readyTimestamp) {
                 db.run("UPDATE orders SET late_notified = 1 WHERE id = ?", [order.id]);
-                if (order.tg_id !== 'test_user') bot.sendMessage(order.tg_id, "😔 К сожалению, не успеваем сделать ваш заказ к назначенному времени, но мы очень торопимся!");
+                if (order.tg_id !== 'test_user') {
+                    bot.sendMessage(order.tg_id, "😔 К сожалению, не успеваем сделать ваш заказ к назначенному времени, но мы очень торопимся!").catch(e => console.error(`[Telegram Bot] Ошибка отправки уведомления об опоздании заказа #${order.id} клиенту ${order.tg_id}:`, e.message));
+                }
             }
         });
     });

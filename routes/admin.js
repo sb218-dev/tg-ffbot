@@ -80,8 +80,14 @@ module.exports = (db, bot) => {
         db.run("UPDATE orders SET status = ? WHERE id = ?", [req.body.status, req.params.id], function() {
             db.get("SELECT tg_id FROM orders WHERE id = ?", [req.params.id], (err, row) => {
                 if (row && row.tg_id !== 'test_user') {
-                    if (req.body.status === 'ready') bot.sendMessage(row.tg_id, `✅ Ваш заказ готов и ждет вас! Приятного аппетита!`);
-                    else if (req.body.status === 'cancelled') bot.sendMessage(row.tg_id, `❌ К сожалению, мы вынуждены отменить ваш заказ. Приносим извинения.`);
+                    let message = '';
+                    if (req.body.status === 'ready') message = `✅ Ваш заказ готов и ждет вас! Приятного аппетита!`;
+                    else if (req.body.status === 'cancelled') message = `❌ К сожалению, мы вынуждены отменить ваш заказ. Приносим извинения.`;
+                    
+                    if (message) {
+                        bot.sendMessage(row.tg_id, message)
+                           .catch(e => console.error(`[Telegram Bot] Ошибка отправки статуса заказа #${req.params.id} клиенту ${row.tg_id}:`, e.message));
+                    }
                 }
             });
             res.json({ success: true });
@@ -95,7 +101,9 @@ module.exports = (db, bot) => {
             if (parts.length === 2) {
                 const newReadyTime = parts[0] + 'T' + newTimeStr;
                 db.run("UPDATE orders SET ready_time = ? WHERE id = ?", [newReadyTime, req.params.id], function() {
-                    if (order.tg_id !== 'test_user') bot.sendMessage(order.tg_id, `⏳ Время готовности вашего заказа было изменено. Новое время: ${newTimeStr}`);
+                    if (order.tg_id !== 'test_user') {
+                        bot.sendMessage(order.tg_id, `⏳ Время готовности вашего заказа было изменено. Новое время: ${newTimeStr}`).catch(e => console.error(`[Telegram Bot] Ошибка отправки нового времени заказа #${req.params.id} клиенту ${order.tg_id}:`, e.message));
+                    }
                     res.json({ success: true, new_time: newReadyTime });
                 });
             } else res.json({ success: false });
