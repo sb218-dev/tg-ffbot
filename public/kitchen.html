@@ -7,7 +7,7 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: white; padding: 10px; border-radius: 8px; flex-wrap: wrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .tab-btn { flex: 1; min-width: 150px; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; background: #e9ecef; color: #495057; transition: 0.2s; }
+        .tab-btn { padding: 12px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; background: #e9ecef; color: #495057; transition: 0.2s; }
         .tab-btn.active { background: #007bff; color: white; }
         .hidden { display: none !important; }
 
@@ -70,6 +70,10 @@
         <button id="tab-orders" class="tab-btn active" onclick="switchTab('orders')">👨‍🍳 Заказы</button>
         <button id="tab-menu" class="tab-btn" onclick="switchTab('menu')">🍔 Меню и Стоп-листы</button>
         <button id="tab-locations" class="tab-btn" onclick="switchTab('locations')">📍 Заведения</button>
+        <div id="sound-status" style="margin-left: auto; display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 0 10px; border-radius: 6px;" title="Нажмите, чтобы включить/выключить звук">
+            <span id="sound-status-icon" style="font-size: 20px;">🔇</span>
+            <span id="sound-status-text" style="font-weight: bold; font-size: 14px;">Звук выключен</span>
+        </div>
     </div>
 
     <div id="section-orders">
@@ -198,6 +202,7 @@
     let allMappings = [];
     let currentEditingMainId = null;
     let currentViewingOrderId = null;
+    let isSoundEnabled = false;
 
     function switchTab(tabName) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -221,8 +226,8 @@
         fetch('/api/orders').then(res => res.json()).then(orders => {
             const newOrder = orders.find(o => !previousOrderIds.has(o.id) && o.status === 'new');
 
-            // Воспроизводим звук, если найден новый заказ и это не первая загрузка
-            if (newOrder && previousOrderIds.size > 0) {
+            // Воспроизводим звук, если найден новый заказ, это не первая загрузка и звук включен
+            if (newOrder && previousOrderIds.size > 0 && isSoundEnabled) {
                 const sound = document.getElementById('notification-sound');
                 if (sound) {
                     sound.play().catch(e => console.error("Ошибка воспроизведения звука:", e));
@@ -557,6 +562,37 @@
         fetch('/api/admin/menu/reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ordered_ids: orderedIds }) })
         .then(res => res.json()).then(data => { if (!data.success) { alert('Ошибка сохранения порядка.'); loadMenuData(); } });
     }
+
+    // ================= 5. УПРАВЛЕНИЕ ЗВУКОМ =================
+    const soundStatusDiv = document.getElementById('sound-status');
+    const soundStatusIcon = document.getElementById('sound-status-icon');
+    const soundStatusText = document.getElementById('sound-status-text');
+
+    soundStatusDiv.addEventListener('click', () => {
+        if (!isSoundEnabled) {
+            const sound = document.getElementById('notification-sound');
+            // Пытаемся воспроизвести звук. Браузер разрешит это, так как действие вызвано кликом пользователя.
+            sound.play().then(() => {
+                sound.pause(); // Сразу ставим на паузу, чтобы не играть звук при включении
+                sound.currentTime = 0;
+                isSoundEnabled = true;
+                soundStatusIcon.innerText = '🔊';
+                soundStatusText.innerText = 'Звук включен';
+                soundStatusDiv.style.color = '#28a745';
+                console.log('Звуковые уведомления включены.');
+            }).catch(error => {
+                // Эта ошибка может возникнуть, если есть другие проблемы с аудиофайлом
+                alert('Не удалось включить звук. Проверьте, что файл notification.mp3 доступен и не поврежден.');
+                console.error('Ошибка активации звука:', error);
+            });
+        } else {
+            isSoundEnabled = false;
+            soundStatusIcon.innerText = '🔇';
+            soundStatusText.innerText = 'Звук выключен';
+            soundStatusDiv.style.color = 'inherit';
+            console.log('Звуковые уведомления выключены.');
+        }
+    });
 </script>
 </body>
 </html>
