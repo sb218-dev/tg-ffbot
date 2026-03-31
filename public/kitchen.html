@@ -64,6 +64,8 @@
 </head>
 <body>
 
+    <audio id="notification-sound" src="/notification.mp3" preload="auto"></audio>
+
     <div class="nav-tabs">
         <button id="tab-orders" class="tab-btn active" onclick="switchTab('orders')">👨‍🍳 Заказы</button>
         <button id="tab-menu" class="tab-btn" onclick="switchTab('menu')">🍔 Меню и Стоп-листы</button>
@@ -214,12 +216,24 @@
 
     // ================= 1. ЗАКАЗЫ =================
     function loadOrders() {
+        const previousOrderIds = new Set(currentOrders.map(o => o.id));
+
         fetch('/api/orders').then(res => res.json()).then(orders => {
+            const newOrder = orders.find(o => !previousOrderIds.has(o.id) && o.status === 'new');
+
+            // Воспроизводим звук, если найден новый заказ и это не первая загрузка
+            if (newOrder && previousOrderIds.size > 0) {
+                const sound = document.getElementById('notification-sound');
+                if (sound) {
+                    sound.play().catch(e => console.error("Ошибка воспроизведения звука:", e));
+                }
+            }
+
             currentOrders = orders;
             renderOrders();
         });
     }
-
+    
     function renderOrders() {
         const container = document.getElementById('orders-container');
         container.innerHTML = '';
