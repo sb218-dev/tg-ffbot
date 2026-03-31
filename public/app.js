@@ -350,19 +350,44 @@ function updateCartUI() {
 }
 
 function updateMainButton(total) {
+    const isTelegramEnv = !!tg.initDataUnsafe.user;
+
     if (total === undefined) {
         total = 0;
         Object.values(cart).forEach(i => { if(i.count > 0) total += i.totalItemPrice * i.count; });
     }
 
+    const fallbackBtnContainer = document.getElementById('fallback-cart-btn');
+    const fallbackBtn = document.getElementById('fallback-cart-btn-inner');
+
+    const showButton = total > 0 && (currentStep === 'menu' || currentStep === 'cart');
+    let buttonText = '';
+    let buttonAction = () => {};
+
     if (currentStep === 'menu') {
-        if (total > 0) tg.MainButton.setParams({ text: `В КОРЗИНУ (${total} ₽)`, color: '#F48C5B', text_color: '#ffffff', is_active: true, is_visible: true });
-        else tg.MainButton.hide();
+        buttonText = `В КОРЗИНУ (${total} ₽)`;
+        buttonAction = () => showCart();
     } else if (currentStep === 'cart') {
-        if (total > 0) tg.MainButton.setParams({ text: `ОФОРМИТЬ ЗАКАЗ`, color: '#F48C5B', text_color: '#ffffff', is_active: true, is_visible: true });
-        else tg.MainButton.hide();
+        buttonText = `ОФОРМИТЬ ЗАКАЗ`;
+        buttonAction = () => submitOrder();
+    }
+
+    if (isTelegramEnv) {
+        fallbackBtnContainer.classList.add('hidden');
+        if (showButton) {
+            tg.MainButton.setParams({ text: buttonText, color: '#F48C5B', text_color: '#ffffff', is_active: true, is_visible: true });
+        } else {
+            tg.MainButton.hide();
+        }
     } else {
         tg.MainButton.hide();
+        if (showButton) {
+            fallbackBtnContainer.classList.remove('hidden');
+            fallbackBtn.innerText = buttonText;
+            fallbackBtn.onclick = buttonAction;
+        } else {
+            fallbackBtnContainer.classList.add('hidden');
+        }
     }
 }
 

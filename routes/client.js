@@ -27,7 +27,7 @@ module.exports = (db, bot, config) => {
 
     router.get('/menu', (req, res) => {
         const locId = req.query.location_id;
-        db.all("SELECT m.* FROM menu m JOIN menu_availability ma ON m.id = ma.menu_id WHERE ma.location_id = ? AND ma.is_available = 1", [locId], (err, menuItems) => {
+        db.all("SELECT m.* FROM menu m JOIN menu_availability ma ON m.id = ma.menu_id WHERE ma.location_id = ? AND ma.is_available = 1 ORDER BY m.sort_order ASC, m.id ASC", [locId], (err, menuItems) => {
             if (err) return res.status(500).json({error: err.message});
             db.all("SELECT * FROM item_addons", [], (err, mappings) => {
                 const mapDict = {};

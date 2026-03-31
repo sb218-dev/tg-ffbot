@@ -15,7 +15,7 @@ module.exports = (db, bot) => {
     });
 
     router.get('/admin/menu/:location_id', (req, res) => {
-        db.all("SELECT m.*, coalesce(ma.is_available, 0) as is_available FROM menu m LEFT JOIN menu_availability ma ON m.id = ma.menu_id AND ma.location_id = ?", [req.params.location_id], (err, menuItems) => {
+        db.all("SELECT m.*, coalesce(ma.is_available, 0) as is_available FROM menu m LEFT JOIN menu_availability ma ON m.id = ma.menu_id AND ma.location_id = ? ORDER BY m.sort_order ASC, m.id ASC", [req.params.location_id], (err, menuItems) => {
             db.all("SELECT * FROM item_addons", [], (err, mappings) => {
                 res.json({ menu: menuItems || [], addons: mappings || [] });
             });
@@ -52,6 +52,23 @@ module.exports = (db, bot) => {
             addon_ids.forEach(a_id => stmt.run(main_id, a_id));
             stmt.finalize();
             res.json({ success: true });
+        });
+    });
+    router.post('/admin/menu/reorder', (req, res) => {
+        const { ordered_ids } = req.body;
+        if (!ordered_ids || !Array.isArray(ordered_ids)) {
+            return res.status(400).json({ success: false, error: 'ordered_ids is required and should be an array.' });
+        }
+
+        db.serialize(() => {
+            const stmt = db.prepare("UPDATE menu SET sort_order = ? WHERE id = ?");
+            ordered_ids.forEach((id, index) => {
+                stmt.run(index, id);
+            });
+            stmt.finalize((err) => {
+                if (err) res.json({ success: false, error: err.message });
+                else res.json({ success: true });
+            });
         });
     });
 

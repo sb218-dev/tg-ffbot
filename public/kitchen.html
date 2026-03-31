@@ -57,6 +57,9 @@
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .addon-checkbox-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
         .addon-checkbox-list label { font-weight: normal; display: flex; align-items: center; gap: 10px; cursor: pointer;}
+        #menu-table-body tr[draggable="true"] {
+            cursor: move;
+        }
     </style>
 </head>
 <body>
@@ -415,13 +418,14 @@
             const linkBtn = (item.type === 'main' || item.type === 'both') ? `<button class="btn btn-primary" style="padding: 5px 10px;" onclick="openLinkModal(${item.id})">🔗</button>` : '';
 
             tbody.innerHTML += `
-                <tr>
+                <tr draggable="true" data-id="${item.id}">
                     <td>${item.id}</td><td><b>${item.category}</b></td><td>${item.name} <br> ${tBadge}</td><td>${item.price} ₽</td>
                     <td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleMenuStatus(${item.id}, this.checked)"><span class="slider"></span></label></td>
                     <td><div style="display:flex;gap:5px;">${linkBtn}<button class="btn btn-warning" style="padding: 5px 10px;" onclick="openEditMenuModal(${item.id})">✏️</button><button class="btn btn-danger" style="padding: 5px 10px;" onclick="deleteMenuItem(${item.id})">🗑️</button></div></td>
                 </tr>
             `;
         });
+        makeMenuSortable();
     }
 
     function toggleMenuStatus(id, isAvail) { 
@@ -484,6 +488,60 @@
     function saveLinks() {
         const selectedIds = Array.from(document.querySelectorAll('.addon-check:checked')).map(cb => parseInt(cb.value));
         fetch(`/api/admin/menu/${currentEditingMainId}/addons`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ addon_ids: selectedIds }) }).then(() => { closeModals(); loadMenuData(); });
+    }
+
+    // ================= 4. СОРТИРОВКА МЕНЮ =================
+    function makeMenuSortable() {
+        const tableBody = document.getElementById('menu-table-body');
+        let draggedItem = null;
+
+        tableBody.addEventListener('dragstart', e => {
+            draggedItem = e.target;
+            // Задержка, чтобы браузер успел "сфотографировать" перетаскиваемый элемент
+            setTimeout(() => {
+                if(draggedItem) draggedItem.style.opacity = '0.5';
+            }, 0);
+        });
+
+        tableBody.addEventListener('dragend', e => {
+            if(draggedItem) draggedItem.style.opacity = '1';
+            draggedItem = null;
+        });
+
+        tableBody.addEventListener('dragover', e => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(tableBody, e.clientY);
+            if (afterElement == null) {
+                tableBody.appendChild(draggedItem);
+            } else {
+                tableBody.insertBefore(draggedItem, afterElement);
+            }
+        });
+        
+        tableBody.addEventListener('drop', e => {
+            e.preventDefault();
+            if(draggedItem) draggedItem.style.opacity = '1';
+            saveMenuOrder();
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('tr:not([style*="opacity: 0.5"])')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+    }
+
+    function saveMenuOrder() {
+        const orderedIds = [...document.querySelectorAll('#menu-table-body tr')].map(row => row.dataset.id);
+        fetch('/api/admin/menu/reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ordered_ids: orderedIds }) })
+        .then(res => res.json()).then(data => { if (!data.success) { alert('Ошибка сохранения порядка.'); loadMenuData(); } });
     }
 </script>
 </body>
