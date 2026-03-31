@@ -438,7 +438,13 @@ function submitOrder() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ location_id: currentLocation.id, tg_id: tgUserId, username: tgUsername, items: items, time: selectedTime, comment: comment })
     }).then(res => res.json()).then(res => {
-        if(res.success) { tg.showAlert("Заказ успешно отправлен!"); tg.close(); } 
-        else { tg.showAlert(res.error || "Ошибка при оформлении"); }
+        if (res.success) {
+            tg.showAlert("Заказ успешно отправлен! Возвращаемся в меню.");
+            cart = {}; // Очищаем корзину
+            updateCartUI(); // Обновляем интерфейс
+            showMenu(); // Показываем меню
+        } else {
+            tg.showAlert(res.error || "Ошибка при оформлении");
+        }
     });
 }
