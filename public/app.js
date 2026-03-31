@@ -12,8 +12,17 @@ let cart = {};
 let userData = null;
 let currentItemSelection = null;
 let currentStep = 'locations';
-const tgUserId = tg.initDataUnsafe?.user?.id || 'test_user';
-const tgUsername = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || '';
+
+let tgUserId = tg.initDataUnsafe?.user?.id;
+let tgUsername = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || '';
+
+if (!tgUserId) {
+    tgUserId = sessionStorage.getItem('webUserId');
+    if (!tgUserId) {
+        tgUserId = 'web_' + Date.now() + Math.floor(Math.random() * 1000);
+        sessionStorage.setItem('webUserId', tgUserId);
+    }
+}
 
 let myMap;
 let markersAdded = false;
@@ -417,7 +426,17 @@ function showMyOrders() {
 }
 
 function cancelMyOrder(orderId) {
-    tg.showConfirm("Отменить этот заказ?", (confirm) => { if(confirm) { fetch(`/api/orders/${orderId}/cancel_by_user`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tg_id: tgUserId }) }).then(() => { tg.showAlert("Заказ отменен"); showLocations(); }); } });
+    const performCancel = (confirmed) => {
+        if (confirmed) {
+            fetch(`/api/orders/${orderId}/cancel_by_user`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tg_id: tgUserId }) })
+            .then(() => {
+                tg.platform === 'unknown' ? alert("Заказ отменен") : tg.showAlert("Заказ отменен");
+                showLocations();
+            });
+        }
+    };
+
+    tg.platform === 'unknown' ? performCancel(confirm("Отменить этот заказ?")) : tg.showConfirm("Отменить этот заказ?", performCancel);
 }
 
 tg.MainButton.onClick(() => {
@@ -439,12 +458,16 @@ function submitOrder() {
         body: JSON.stringify({ location_id: currentLocation.id, tg_id: tgUserId, username: tgUsername, items: items, time: selectedTime, comment: comment })
     }).then(res => res.json()).then(res => {
         if (res.success) {
-            tg.showAlert("Заказ успешно отправлен! Возвращаемся в меню.");
+            if (tg.platform === 'unknown') {
+                alert("Заказ успешно отправлен! Возвращаемся в меню.");
+            } else {
+                tg.showAlert("Заказ успешно отправлен! Возвращаемся в меню.");
+            }
             cart = {}; // Очищаем корзину
             updateCartUI(); // Обновляем интерфейс
             showMenu(); // Показываем меню
         } else {
-            tg.showAlert(res.error || "Ошибка при оформлении");
+            tg.platform === 'unknown' ? alert(res.error || "Ошибка при оформлении") : tg.showAlert(res.error || "Ошибка при оформлении");
         }
     });
 }
