@@ -24,6 +24,12 @@ if (config.PROXY_URL) {
     botOptions.request = { agent: agent };
     console.log('🌐 Бот использует SOCKS5 прокси');
 }
+
+// Альтернативный способ: Проксирование самого API Телеграма (например, через Cloudflare)
+if (config.TG_API_PROXY) {
+    botOptions.baseApiUrl = config.TG_API_PROXY;
+    console.log(`🌐 Бот использует прокси-API: ${config.TG_API_PROXY}`);
+}
 const bot = new TelegramBot(TOKEN, botOptions);
 
 bot.on('polling_error', (error) => {
