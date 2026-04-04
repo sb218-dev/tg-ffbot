@@ -20,9 +20,13 @@ const app = express();
 
 const botOptions = { polling: true };
 if (config.PROXY_URL) {
-    const agent = new SocksProxyAgent(config.PROXY_URL);
-    botOptions.request = { agent: agent };
-    console.log('🌐 Бот использует SOCKS5 прокси');
+    if (config.PROXY_URL.startsWith('socks')) {
+        const agent = new SocksProxyAgent(config.PROXY_URL);
+        botOptions.request = { agent: agent };
+    } else {
+        botOptions.request = { proxy: config.PROXY_URL }; // Нативная поддержка HTTP-прокси
+    }
+    console.log(`🌐 Бот использует прокси: ${config.PROXY_URL}`);
 }
 
 // Альтернативный способ: Проксирование самого API Телеграма (например, через Cloudflare)
