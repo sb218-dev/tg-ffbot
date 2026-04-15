@@ -48,12 +48,18 @@ module.exports = (db, bot, config) => {
             if (!location) return res.status(400).json({ error: "Заведение не найдено" });
             if (location.is_active === 0) return res.status(400).json({ error: "В данный момент заведение не принимает предзаказы (Экстренная остановка)." });
 
+            if (!items || !Array.isArray(items) || items.length === 0) {
+                return res.status(400).json({ error: "Пустая корзина или неверный формат данных" });
+            }
+
             const orderTimeMs = new Date(time + '+03:00').getTime();
             const nowMs = Date.now();
-            if (orderTimeMs < nowMs + 9 * 60 * 1000 || orderTimeMs > nowMs + 48 * 60 * 60 * 1000) return res.status(400).json({ error: "Недопустимое время (мин 10 минут, макс 2 суток)" });
+            // Оставляем запас (5 минут вместо 9) на случай, если клиент долго находился в корзине
+            if (orderTimeMs < nowMs + 5 * 60 * 1000 || orderTimeMs > nowMs + 48 * 60 * 60 * 1000) return res.status(400).json({ error: "Недопустимое время. Укажите время с запасом минимум 10 минут." });
 
-            const orderDate = new Date(time + '+03:00');
-            const orderTimeFloat = orderDate.getHours() + (orderDate.getMinutes() / 60);
+            // Берем часы и минуты напрямую из строки (формат YYYY-MM-DDTHH:mm) для независимости от часового пояса сервера
+            const [orderH, orderM] = time.split('T')[1].split(':').map(Number);
+            const orderTimeFloat = orderH + (orderM / 60);
             const [openH, openM] = location.open_time.split(':').map(Number);
             const [closeH, closeM] = location.close_time.split(':').map(Number);
             if (orderTimeFloat < (openH + openM/60) || orderTimeFloat >= (closeH + closeM/60)) return res.status(400).json({ error: `Это заведение принимает предзаказы только на время с ${location.open_time} до ${location.close_time}.` });
@@ -81,6 +87,11 @@ module.exports = (db, bot, config) => {
                         bot.sendMessage(KITCHEN_CHAT_ID, `📍 Точка: ${location.name}\n🔥 НОВЫЙ ЗАКАЗ #${this.lastID}\n👤 Клиент: ${clientInfo}\n\nСостав:\n${details}${commentText}\n\nСумма: ${total} руб.\n⏰ К времени: ${time.replace('T', ' ')}`, 
                             { reply_markup: { inline_keyboard: [[ { text: "👨‍🍳 Открыть панель кухни", url: `${WEBAPP_URL}/kitchen.html` } ]] } }
                         ).catch(err => console.error('[Telegram Bot] Ошибка отправки заказа в чат кухни. Проверьте KITCHEN_CHAT_ID и права бота:', err.message));
+                        
+                        if (tg_id !== 'test_user') {
+                            bot.sendMessage(tg_id, `Ваш заказ принят. Его номер #${this.lastID}`).catch(err => console.error('[Telegram Bot] Ошибка отправки подтверждения клиенту:', err.message));
+                        }
+                        
                         res.json({ success: true, orderId: this.lastID });
                 });
             });

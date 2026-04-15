@@ -188,7 +188,7 @@ function renderMenu() {
                 <div class="item-info">
                     <h4>${item.name}</h4>
                 </div>
-                <button class="price-btn" onclick="event.stopPropagation(); directAddBaseItem(${item.id})">${item.price} ₽</button>
+                <div class="price-btn">${item.price} ₽</div>
             `;
             grid.appendChild(div);
         });
@@ -208,6 +208,18 @@ function showCart() {
     currentStep = 'cart';
     document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
     document.getElementById('step-cart').classList.remove('hidden');
+    
+    // Обновляем минимальное время при входе в корзину
+    const timePicker = document.getElementById('time-picker');
+    const nowSPb = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+    const minTime = new Date(nowSPb.getTime() + 10 * 60000); 
+    const formatForInput = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const minTimeStr = formatForInput(minTime);
+    timePicker.min = minTimeStr;
+    if (!timePicker.value || timePicker.value < minTimeStr) {
+        timePicker.value = minTimeStr;
+    }
+
     updateMainButton();
 }
 
@@ -450,6 +462,19 @@ function submitOrder() {
     const comment = document.getElementById('order-comment').value;
 
     if (!selectedTime) { tg.showAlert("Укажите время готовности!"); return; }
+
+    // Проверка: не протухло ли время
+    const nowSPb = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+    const formatForInput = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const absoluteMinTime = formatForInput(new Date(nowSPb.getTime() + 5 * 60000));
+
+    if (selectedTime < absoluteMinTime) {
+        tg.showAlert("Время заказа устарело. Мы обновили его на ближайшее доступное.");
+        const newMinTime = formatForInput(new Date(nowSPb.getTime() + 10 * 60000));
+        document.getElementById('time-picker').min = newMinTime;
+        document.getElementById('time-picker').value = newMinTime;
+        return;
+    }
 
     const items = Object.values(cart).filter(i => i.count > 0);
     

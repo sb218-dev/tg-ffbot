@@ -95,6 +95,7 @@ module.exports = (db, bot) => {
     });
     router.put('/orders/:id/time', (req, res) => {
         const newTimeStr = req.body.time;
+        if (!newTimeStr) return res.status(400).json({ success: false, error: 'Время не указано' });
         db.get("SELECT ready_time, tg_id FROM orders WHERE id = ?", [req.params.id], (err, order) => {
             if (err || !order) return res.json({ success: false, error: 'Заказ не найден' });
             const parts = order.ready_time.split('T');
