@@ -21,6 +21,7 @@ db.serialize(() => {
     // Создаем индексы для быстрого поиска
     db.run("CREATE INDEX IF NOT EXISTS idx_orders_tgid ON orders(tg_id)");
     db.run("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_orders_tgid_status ON orders(tg_id, status)");
     db.run("CREATE INDEX IF NOT EXISTS idx_menu_avail_location ON menu_availability(location_id)");
     db.run("CREATE INDEX IF NOT EXISTS idx_menu_sort_order ON menu(sort_order)");
     

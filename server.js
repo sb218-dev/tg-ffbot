@@ -42,6 +42,7 @@ bot.on('polling_error', (error) => {
 
 bot.getMe().then((me) => {
     console.log(`✅ Бот @${me.username} успешно связался с Telegram!`);
+    app.locals.botUsername = me.username;
 }).catch((err) => {
     console.log(`❌ Ошибка связи с Telegram:`, err.message);
 });
@@ -80,6 +81,10 @@ const integrationRoutes = require('./routes/integrations')(db, bot, config);
 app.use('/api', adminRoutes);
 app.use('/api', clientRoutes);
 app.use('/api', integrationRoutes);
+
+app.get('/api/bot-info', (req, res) => {
+    res.json({ username: app.locals.botUsername || null });
+});
 
 setInterval(() => {
     db.all("SELECT id, tg_id, ready_time FROM orders WHERE status = 'new' AND late_notified = 0", [], (err, rows) => {

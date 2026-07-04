@@ -5,6 +5,48 @@ tg.expand();
 tg.setBackgroundColor('#ffffff');
 tg.setHeaderColor('#ffffff');
 
+// Функция надежного вычисления времени в часовом поясе Москвы (UTC+3) для решения багов на iOS/Safari
+function getMoscowDate() {
+    const now = new Date();
+    const moscowTimeMs = now.getTime() + (now.getTimezoneOffset() * 60000) + (3 * 3600000);
+    return new Date(moscowTimeMs);
+}
+
+// Проверка окружения (блокировка вне Telegram)
+const isTelegram = !!tg.initData;
+const isDebug = window.location.hostname === 'localhost' || 
+                window.location.hostname === '127.0.0.1' || 
+                new URLSearchParams(window.location.search).has('debug');
+
+if (!isTelegram && !isDebug) {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Скрываем все разделы приложения
+        document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
+        if (document.getElementById('fallback-cart-btn')) {
+            document.getElementById('fallback-cart-btn').classList.add('hidden');
+        }
+        
+        // Показываем оверлей блокировки
+        const overlay = document.getElementById('telegram-only-overlay');
+        if (overlay) {
+            overlay.classList.remove('hidden');
+        }
+        
+        // Загружаем ссылку на бота для кнопки перехода
+        fetch('/api/bot-info')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.username) {
+                    const link = document.getElementById('telegram-bot-link');
+                    if (link) {
+                        link.href = `https://t.me/${data.username}`;
+                    }
+                }
+            })
+            .catch(err => console.error('Ошибка получения инфо о боте:', err));
+    });
+}
+
 let locationsData = [];
 let currentLocation = null;
 let menuData = [];
@@ -88,24 +130,26 @@ function addMarkers() {
     }, 300);
 }
 
-Promise.all([
-    fetch('/api/locations?v=' + new Date().getTime()).then(res => res.json()),
-    fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tg_id: tgUserId, username: tgUsername }) }).then(res => res.json())
-]).then(([locations, user]) => {
-    locationsData = locations;
-    userData = user;
-    renderLocations();
-    checkMyOrders();
-    
-    // Инициируем подгрузку скриптов Яндекс Карт параллельно с рендером UI
-    loadYandexMaps();
-    
-    // Автоматический выбор последней точки
-    if (userData && userData.last_location_id) {
-        const savedLoc = locationsData.find(l => l.id === userData.last_location_id && l.is_active);
-        if (savedLoc) selectLocation(savedLoc, false);
-    }
-});
+if (isTelegram || isDebug) {
+    Promise.all([
+        fetch('/api/locations?v=' + new Date().getTime()).then(res => res.json()),
+        fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tg_id: tgUserId, username: tgUsername }) }).then(res => res.json())
+    ]).then(([locations, user]) => {
+        locationsData = locations;
+        userData = user;
+        renderLocations();
+        checkMyOrders();
+        
+        // Инициируем подгрузку скриптов Яндекс Карт параллельно с рендером UI
+        loadYandexMaps();
+        
+        // Автоматический выбор последней точки
+        if (userData && userData.last_location_id) {
+            const savedLoc = locationsData.find(l => l.id === userData.last_location_id && l.is_active);
+            if (savedLoc) selectLocation(savedLoc, false);
+        }
+    });
+}
 
 function renderLocations() {
     const container = document.getElementById('locations-container');
@@ -134,7 +178,7 @@ function selectLocation(loc, savePreference = true) {
     document.getElementById('time-hint').innerText = `Часы работы: ${loc.open_time} - ${loc.close_time}`;
     
     const timePicker = document.getElementById('time-picker');
-    const nowSPb = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+    const nowSPb = getMoscowDate();
     const minTime = new Date(nowSPb.getTime() + 10 * 60000); 
     const maxTime = new Date(nowSPb.getTime() + 48 * 3600000); 
     const formatForInput = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -184,7 +228,7 @@ function renderMenu() {
             div.dataset.name = item.name.toLowerCase();
             div.onclick = () => openAddonModal(item.id);
             div.innerHTML = `
-                <img src="/images/${item.id}.webp" onerror="this.src='https://placehold.co/300x300/E9EEF5/3F5CA9?text=Нет+фото'" class="item-image" alt="${item.name}">
+                <img src="/images/${item.id}.webp" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\' viewBox=\'0 0 300 300\'><rect width=\'300\' height=\'300\' fill=\'%23FFF3EB\'/><text x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'16\' font-weight=\'bold\' fill=\'%23F48C5B\'>Нет фото</text></svg>'" class="item-image" alt="${item.name}">
                 <div class="item-info">
                     <h4>${item.name}</h4>
                 </div>
@@ -211,7 +255,7 @@ function showCart() {
     
     // Обновляем минимальное время при входе в корзину
     const timePicker = document.getElementById('time-picker');
-    const nowSPb = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+    const nowSPb = getMoscowDate();
     const minTime = new Date(nowSPb.getTime() + 10 * 60000); 
     const formatForInput = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     const minTimeStr = formatForInput(minTime);
@@ -464,7 +508,7 @@ function submitOrder() {
     if (!selectedTime) { tg.showAlert("Укажите время готовности!"); return; }
 
     // Проверка: не протухло ли время
-    const nowSPb = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+    const nowSPb = getMoscowDate();
     const formatForInput = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     const absoluteMinTime = formatForInput(new Date(nowSPb.getTime() + 5 * 60000));
 
