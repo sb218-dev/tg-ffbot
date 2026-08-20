@@ -54,6 +54,7 @@ let cart = {};
 let userData = null;
 let currentItemSelection = null;
 let currentStep = 'locations';
+let isSubmittingOrder = false;
 
 let tgUserId = tg.initDataUnsafe?.user?.id;
 let tgUsername = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || '';
@@ -93,14 +94,21 @@ function loadYandexMaps() {
 function addMarkers() {
     if (!myMap || markersAdded || locationsData.length === 0) return;
     locationsData.forEach(loc => {
-        const locName = loc.name ? loc.name.toLowerCase() : '';
         let coords = null;
-        
-        // Гибкий поиск по названию, чтобы исключить проблемы со скрытыми пробелами или кодировкой
-        if (locName.includes('чебуречная') || locName.includes('13')) {
-            coords = [59.827724, 30.346403];
-        } else if (locName.includes('чебуречная') || locName.includes('8')) {
-            coords = [59.922075, 30.459518];
+        if (loc.coords && loc.coords.includes(',')) {
+            const parts = loc.coords.split(',').map(c => parseFloat(c.trim()));
+            if (!isNaN(parts[0]) && !isNaN(parts[1])) {
+                coords = parts;
+            }
+        }
+
+        if (!coords) {
+            const locName = loc.name ? loc.name.toLowerCase() : '';
+            if (loc.id === 1 || locName.includes('московское') || locName.includes('13')) {
+                coords = [59.827724, 30.346403];
+            } else if (loc.id === 2 || locName.includes('коллонтай') || locName.includes('ворошилова') || locName.includes('31') || locName.includes('8') || locName.includes('пятилеток')) {
+                coords = [59.922624, 30.484323];
+            }
         }
 
         if (coords) {
@@ -501,11 +509,14 @@ tg.MainButton.onClick(() => {
 });
 
 function submitOrder() {
-    if(!currentLocation) return;
+    if (!currentLocation || isSubmittingOrder) return;
     const selectedTime = document.getElementById('time-picker').value;
     const comment = document.getElementById('order-comment').value;
 
-    if (!selectedTime) { tg.showAlert("Укажите время готовности!"); return; }
+    if (!selectedTime) { 
+        tg.platform === 'unknown' ? alert("Укажите время готовности!") : tg.showAlert("Укажите время готовности!"); 
+        return; 
+    }
 
     // Проверка: не протухло ли время
     const nowSPb = getMoscowDate();
@@ -513,7 +524,7 @@ function submitOrder() {
     const absoluteMinTime = formatForInput(new Date(nowSPb.getTime() + 5 * 60000));
 
     if (selectedTime < absoluteMinTime) {
-        tg.showAlert("Время заказа устарело. Мы обновили его на ближайшее доступное.");
+        tg.platform === 'unknown' ? alert("Время заказа устарело. Мы обновили его на ближайшее доступное.") : tg.showAlert("Время заказа устарело. Мы обновили его на ближайшее доступное.");
         const newMinTime = formatForInput(new Date(nowSPb.getTime() + 10 * 60000));
         document.getElementById('time-picker').min = newMinTime;
         document.getElementById('time-picker').value = newMinTime;
@@ -521,11 +532,48 @@ function submitOrder() {
     }
 
     const items = Object.values(cart).filter(i => i.count > 0);
+    if (items.length === 0) {
+        tg.platform === 'unknown' ? alert("Корзина пуста!") : tg.showAlert("Корзина пуста!");
+        return;
+    }
+
+    isSubmittingOrder = true;
+    const fallbackBtn = document.getElementById('fallback-cart-btn-inner');
+    if (fallbackBtn) {
+        fallbackBtn.disabled = true;
+        fallbackBtn.style.opacity = '0.6';
+        fallbackBtn.style.pointerEvents = 'none';
+        fallbackBtn.innerText = '⏳ ОФОРМЛЯЕМ ЗАКАЗ...';
+    }
+    if (tg.MainButton.isVisible) {
+        tg.MainButton.showProgress(false);
+        tg.MainButton.disable();
+    }
     
     fetch('/api/order', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location_id: currentLocation.id, tg_id: tgUserId, username: tgUsername, items: items, time: selectedTime, comment: comment })
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            location_id: currentLocation.id, 
+            tg_id: tgUserId, 
+            username: tgUsername, 
+            items: items, 
+            time: selectedTime, 
+            comment: comment 
+        })
     }).then(res => res.json()).then(res => {
+        isSubmittingOrder = false;
+        if (fallbackBtn) {
+            fallbackBtn.disabled = false;
+            fallbackBtn.style.opacity = '1';
+            fallbackBtn.style.pointerEvents = 'auto';
+            fallbackBtn.innerText = 'ОФОРМИТЬ ЗАКАЗ';
+        }
+        if (tg.MainButton.isVisible) {
+            tg.MainButton.hideProgress();
+            tg.MainButton.enable();
+        }
+
         if (res.success) {
             if (tg.platform === 'unknown') {
                 alert("Заказ успешно отправлен! Возвращаемся в меню.");
@@ -538,5 +586,19 @@ function submitOrder() {
         } else {
             tg.platform === 'unknown' ? alert(res.error || "Ошибка при оформлении") : tg.showAlert(res.error || "Ошибка при оформлении");
         }
+    }).catch(err => {
+        isSubmittingOrder = false;
+        if (fallbackBtn) {
+            fallbackBtn.disabled = false;
+            fallbackBtn.style.opacity = '1';
+            fallbackBtn.style.pointerEvents = 'auto';
+            fallbackBtn.innerText = 'ОФОРМИТЬ ЗАКАЗ';
+        }
+        if (tg.MainButton.isVisible) {
+            tg.MainButton.hideProgress();
+            tg.MainButton.enable();
+        }
+        console.error('Ошибка отправки заказа:', err);
+        tg.platform === 'unknown' ? alert("Сетевая ошибка при отправке заказа. Попробуйте еще раз.") : tg.showAlert("Сетевая ошибка при отправке заказа. Попробуйте еще раз.");
     });
 }

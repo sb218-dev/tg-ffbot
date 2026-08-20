@@ -6,12 +6,12 @@ module.exports = (db, bot) => {
     // ================= API АДМИНКИ =================
     router.get('/admin/locations', (req, res) => db.all("SELECT * FROM locations", [], (err, rows) => res.json(rows)));
     router.post('/admin/locations', (req, res) => {
-        const { name, open_time, close_time } = req.body;
-        db.run("INSERT INTO locations (name, open_time, close_time) VALUES (?, ?, ?)", [name, open_time, close_time], err => res.json({ success: !err }));
+        const { name, open_time, close_time, coords, description } = req.body;
+        db.run("INSERT INTO locations (name, open_time, close_time, coords, description) VALUES (?, ?, ?, ?, ?)", [name, open_time, close_time, coords || '', description || ''], err => res.json({ success: !err }));
     });
     router.put('/admin/locations/:id', (req, res) => {
-        const { name, open_time, close_time, is_active } = req.body;
-        db.run("UPDATE locations SET name = ?, open_time = ?, close_time = ?, is_active = ? WHERE id = ?", [name, open_time, close_time, is_active, req.params.id], err => res.json({ success: !err }));
+        const { name, open_time, close_time, is_active, coords, description } = req.body;
+        db.run("UPDATE locations SET name = ?, open_time = ?, close_time = ?, is_active = ?, coords = ?, description = ? WHERE id = ?", [name, open_time, close_time, is_active, coords || '', description || '', req.params.id], err => res.json({ success: !err }));
     });
 
     router.get('/admin/menu/:location_id', (req, res) => {

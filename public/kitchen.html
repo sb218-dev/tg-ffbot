@@ -179,6 +179,7 @@
             <h2 id="loc-modal-title">Новое заведение</h2>
             <input type="hidden" id="edit-loc-id">
             <div class="form-group"><label>Название / Адрес</label><input type="text" id="edit-loc-name"></div>
+            <div class="form-group"><label>Координаты на карте (Широта, Долгота)</label><input type="text" id="edit-loc-coords" placeholder="59.922624, 30.484323"></div>
             <div class="form-group"><label>Время открытия (ЧЧ:ММ)</label><input type="time" id="edit-loc-open" value="11:00"></div>
             <div class="form-group"><label>Время закрытия (ЧЧ:ММ)</label><input type="time" id="edit-loc-close" value="23:00"></div>
             <button class="btn btn-success btn-block" onclick="saveLocation()">Сохранить</button>
@@ -392,6 +393,7 @@
 
     function openLocModal() {
         document.getElementById('edit-loc-id').value = ''; document.getElementById('edit-loc-name').value = '';
+        document.getElementById('edit-loc-coords').value = '';
         document.getElementById('edit-loc-open').value = '11:00'; document.getElementById('edit-loc-close').value = '23:00';
         document.getElementById('loc-modal-title').innerText = 'Новое заведение';
         document.getElementById('locModal').style.display = 'flex';
@@ -401,6 +403,7 @@
         const loc = globalLocations.find(l => l.id === id);
         document.getElementById('edit-loc-id').value = loc.id;
         document.getElementById('edit-loc-name').value = loc.name;
+        document.getElementById('edit-loc-coords').value = loc.coords || '';
         document.getElementById('edit-loc-open').value = loc.open_time;
         document.getElementById('edit-loc-close').value = loc.close_time;
         document.getElementById('loc-modal-title').innerText = 'Редактировать заведение';
@@ -409,7 +412,12 @@
 
     function saveLocation() {
         const id = document.getElementById('edit-loc-id').value;
-        const payload = { name: document.getElementById('edit-loc-name').value, open_time: document.getElementById('edit-loc-open').value, close_time: document.getElementById('edit-loc-close').value };
+        const payload = { 
+            name: document.getElementById('edit-loc-name').value, 
+            coords: document.getElementById('edit-loc-coords').value.trim(),
+            open_time: document.getElementById('edit-loc-open').value, 
+            close_time: document.getElementById('edit-loc-close').value 
+        };
         if (id) fetch(`/api/admin/locations/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...globalLocations.find(l => l.id == id), ...payload}) }).then(() => { closeModals(); loadLocationsData(); });
         else fetch(`/api/admin/locations`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }).then(() => { closeModals(); loadLocationsData(); });
     }

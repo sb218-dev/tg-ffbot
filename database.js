@@ -6,7 +6,7 @@ db.serialize(() => {
     db.run("PRAGMA journal_mode = WAL");
     db.run("PRAGMA synchronous = NORMAL");
 
-    db.run("CREATE TABLE IF NOT EXISTS locations (id INTEGER PRIMARY KEY, name TEXT, open_time TEXT DEFAULT '11:00', close_time TEXT DEFAULT '23:00', is_active INTEGER DEFAULT 1)");
+    db.run("CREATE TABLE IF NOT EXISTS locations (id INTEGER PRIMARY KEY, name TEXT, open_time TEXT DEFAULT '11:00', close_time TEXT DEFAULT '23:00', is_active INTEGER DEFAULT 1, coords TEXT DEFAULT '', description TEXT DEFAULT '')");
     // Единое меню без дубликатов
     db.run("CREATE TABLE IF NOT EXISTS menu (id INTEGER PRIMARY KEY, category TEXT, name TEXT, price INTEGER, type TEXT DEFAULT 'main', sort_order INTEGER DEFAULT 0)");
     db.run("CREATE TABLE IF NOT EXISTS menu_availability (menu_id INTEGER, location_id INTEGER, is_available INTEGER DEFAULT 1, PRIMARY KEY(menu_id, location_id))");
@@ -17,6 +17,8 @@ db.serialize(() => {
     db.run("ALTER TABLE orders ADD COLUMN source TEXT DEFAULT 'telegram'", (err) => { /* Игнорируем ошибку */ });
     db.run("ALTER TABLE menu ADD COLUMN description TEXT DEFAULT ''", (err) => { /* Игнорируем ошибку */ });
     db.run("ALTER TABLE menu ADD COLUMN sort_order INTEGER DEFAULT 0", (err) => { /* Игнорируем ошибку */ });
+    db.run("ALTER TABLE locations ADD COLUMN coords TEXT DEFAULT ''", (err) => { /* Игнорируем ошибку */ });
+    db.run("ALTER TABLE locations ADD COLUMN description TEXT DEFAULT ''", (err) => { /* Игнорируем ошибку */ });
 
     // Создаем индексы для быстрого поиска
     db.run("CREATE INDEX IF NOT EXISTS idx_orders_tgid ON orders(tg_id)");
@@ -24,16 +26,33 @@ db.serialize(() => {
     db.run("CREATE INDEX IF NOT EXISTS idx_orders_tgid_status ON orders(tg_id, status)");
     db.run("CREATE INDEX IF NOT EXISTS idx_menu_avail_location ON menu_availability(location_id)");
     db.run("CREATE INDEX IF NOT EXISTS idx_menu_sort_order ON menu(sort_order)");
+
+    // Обновляем существующие локации и координаты при необходимости
+    db.run("UPDATE locations SET coords = '59.827724, 30.346403' WHERE id = 1 AND (coords IS NULL OR coords = '')");
+    db.run("UPDATE locations SET name = 'улица Коллонтай, 31к2', coords = '59.922624, 30.484323' WHERE id = 2 OR name LIKE '%Пятилеток%'");
+
+    // Проверяем наличие позиции Черника крем чиз
+    db.get("SELECT id FROM menu WHERE name = 'Черника крем чиз'", (err, row) => {
+        if (!row) {
+            db.run("INSERT INTO menu (category, name, price, type, sort_order) VALUES ('Чебуреки', 'Черника крем чиз', 230, 'main', 13)", function(err) {
+                if (!err && this.lastID) {
+                    const newId = this.lastID;
+                    db.run("INSERT OR IGNORE INTO menu_availability (menu_id, location_id, is_available) SELECT ?, id, 1 FROM locations", [newId]);
+                    db.run("INSERT OR IGNORE INTO item_addons (main_id, addon_id) SELECT ?, m.id FROM menu m WHERE m.category = 'Соусы и добавки'", [newId]);
+                }
+            });
+        }
+    });
     
     db.get("SELECT count(*) as count FROM locations", (err, row) => {
-        if (row.count === 0) {
+        if (row && row.count === 0) {
             db.serialize(() => {
-                db.run("INSERT INTO locations (name, open_time, close_time) VALUES ('Московское шоссе 13жд', '11:00', '23:00')");
-                db.run("INSERT INTO locations (name, open_time, close_time) VALUES ('проспект Пятилеток 8', '11:00', '23:00')");
+                db.run("INSERT INTO locations (name, open_time, close_time, coords) VALUES ('Московское шоссе 13жд', '11:00', '23:00', '59.827724, 30.346403')");
+                db.run("INSERT INTO locations (name, open_time, close_time, coords) VALUES ('улица Коллонтай, 31к2', '11:00', '23:00', '59.922624, 30.484323')");
 
                 const stmt = db.prepare(`INSERT INTO menu (category, name, price, type) VALUES (?, ?, ?, ?)`);
                 
-                const chebureks = [ ["Говядина и свинина", 210], ["Мраморная говядина", 230], ["Баранина", 240], ["Ветчина сыр", 225], ["Сыр зелень", 230], ["Сыр", 220], ["Четыре сыра", 300], ["Картошка сыр бекон", 245], ["Картошка грибы", 195], ["Чебурек - пицца", 270], ["Пепперони", 235], ["Вишня", 225], ["Банан шоколад", 230] ];
+                const chebureks = [ ["Говядина и свинина", 210], ["Мраморная говядина", 230], ["Баранина", 240], ["Ветчина сыр", 225], ["Сыр зелень", 230], ["Сыр", 220], ["Четыре сыра", 300], ["Картошка сыр бекон", 245], ["Картошка грибы", 195], ["Чебурек - пицца", 270], ["Пепперони", 235], ["Вишня", 225], ["Черника крем чиз", 230], ["Банан шоколад", 230] ];
                 chebureks.forEach(i => stmt.run("Чебуреки", i[0], i[1], "main"));
                 
                 const snacks = [ ["Картофель фри", 170], ["Картофель айдахо", 190], ["Наггетсы", 180], ["Хворост", 100], ["Сырные палочки", 180], ["Пельмени жаренные", 350] ];
