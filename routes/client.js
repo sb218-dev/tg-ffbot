@@ -1,3 +1,5 @@
+const express = require('express');
+
 function escapeHtml(text) {
     if (!text) return '';
     return String(text)
