@@ -18,6 +18,14 @@ const KITCHEN_CHAT_ID = config.KITCHEN_CHAT_ID;
 const PORT = 3000;
 const app = express();
 
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('⚠️ [Unhandled Rejection]:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('❌ [Uncaught Exception]:', err);
+});
+
 const botOptions = { polling: true };
 if (config.PROXY_URL) {
     if (config.PROXY_URL.startsWith('socks')) {
@@ -94,7 +102,7 @@ setInterval(() => {
             const readyTimestamp = new Date(order.ready_time + '+03:00').getTime();
             if (now > readyTimestamp) {
                 db.run("UPDATE orders SET late_notified = 1 WHERE id = ?", [order.id]);
-                if (order.tg_id !== 'test_user') {
+                if (order.tg_id && order.tg_id !== 'test_user' && !String(order.tg_id).startsWith('web_')) {
                     bot.sendMessage(order.tg_id, "😔 К сожалению, не успеваем сделать ваш заказ к назначенному времени, но мы очень торопимся!").catch(e => console.error(`[Telegram Bot] Ошибка отправки уведомления об опоздании заказа #${order.id} клиенту ${order.tg_id}:`, e.message));
                 }
             }
@@ -151,10 +159,11 @@ function scheduleMidnightArchivation() {
     const nextMidnight = new Date(moscowDate);
     nextMidnight.setHours(24, 0, 0, 0); // Устанавливаем ровно на 00:00 следующего дня
     
+    const delay = Math.max(nextMidnight.getTime() - moscowDate.getTime(), 1000);
     setTimeout(() => {
         archiveOldOrders();
         scheduleMidnightArchivation(); // Планируем следующий запуск на следующие сутки
-    }, nextMidnight.getTime() - moscowDate.getTime());
+    }, delay);
 }
 scheduleMidnightArchivation();
 

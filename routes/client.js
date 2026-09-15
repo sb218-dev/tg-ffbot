@@ -1,4 +1,11 @@
-const express = require('express');
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
 
 module.exports = (db, bot, config) => {
     const router = express.Router();
@@ -6,15 +13,19 @@ module.exports = (db, bot, config) => {
 
     // ================= API КЛИЕНТА =================
     router.post('/users', (req, res) => {
-        const { tg_id, username } = req.body;
+        const { tg_id, username, full_name } = req.body;
         if (!tg_id) return res.status(400).json({ error: 'tg_id is required' });
+        const cleanUsername = username ? String(username).replace(/^@/, '').trim() : '';
+        const hasUsername = /^[a-zA-Z0-9_]{4,32}$/.test(cleanUsername);
+        const displayName = hasUsername ? `@${cleanUsername}` : (full_name || username || '');
+
         db.get("SELECT * FROM users WHERE tg_id = ?", [tg_id], (err, user) => {
             if (user) {
-                db.run("UPDATE users SET username = ? WHERE tg_id = ?", [username, tg_id]);
+                db.run("UPDATE users SET username = ? WHERE tg_id = ?", [displayName, tg_id]);
                 res.json(user);
             } else {
-                db.run("INSERT INTO users (tg_id, username) VALUES (?, ?)", [tg_id, username], function() {
-                    res.json({ tg_id, username, last_location_id: null, points: 0 });
+                db.run("INSERT INTO users (tg_id, username) VALUES (?, ?)", [tg_id, displayName], function(err) {
+                    res.json({ tg_id, username: displayName, last_location_id: null, points: 0 });
                 });
             }
         });
@@ -55,7 +66,7 @@ module.exports = (db, bot, config) => {
     }, 300000);
 
     router.post('/order', (req, res) => {
-        const { location_id, tg_id, username, items, time, comment } = req.body;
+        const { location_id, tg_id, username, full_name, items, time, comment } = req.body;
         
         if (!tg_id) {
             return res.status(400).json({ error: "Не передан идентификатор пользователя" });
@@ -148,8 +159,28 @@ module.exports = (db, bot, config) => {
                 }).join('\n');
                 const total = items.reduce((sum, i) => sum + (i.totalItemPrice * i.count), 0);
 
+                const cleanUsername = username ? String(username).replace(/^@/, '').trim() : '';
+                const isValidUsername = /^[a-zA-Z0-9_]{4,32}$/.test(cleanUsername);
+                const clientDisplayName = (full_name || username || 'Клиент').trim();
+                const isNumericTgId = tg_id && !isNaN(Number(tg_id));
+
+                let clientInfo = '';
+                if (isNumericTgId) {
+                    if (isValidUsername) {
+                        clientInfo = `<a href="tg://user?id=${tg_id}">${escapeHtml(clientDisplayName)}</a> (<a href="https://t.me/${cleanUsername}">@${cleanUsername}</a>)`;
+                    } else {
+                        clientInfo = `<a href="tg://user?id=${tg_id}">${escapeHtml(clientDisplayName)}</a> (ID: <code>${tg_id}</code>)`;
+                    }
+                } else if (isValidUsername) {
+                    clientInfo = `<a href="https://t.me/${cleanUsername}">@${cleanUsername}</a>`;
+                } else {
+                    clientInfo = escapeHtml(clientDisplayName);
+                }
+
+                const savedUsername = isValidUsername ? `@${cleanUsername}` : clientDisplayName;
+
                 db.run("INSERT INTO orders (location_id, tg_id, username, details, comment, ready_time, status, created_at, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                    [location_id, tg_id, username, details, comment, time, 'new', createdAt, total], function(err) {
+                    [location_id, tg_id, savedUsername, details, comment, time, 'new', createdAt, total], function(err) {
                         releaseLock();
 
                         if (err) {
@@ -166,11 +197,20 @@ module.exports = (db, bot, config) => {
                             orderId: orderId
                         });
 
-                        const clientInfo = username ? `@${username}` : `ID: ${tg_id}`;
-                        const commentText = comment ? `\n💬 Комментарий: ${comment}` : '';
-                        bot.sendMessage(KITCHEN_CHAT_ID, `📍 Точка: ${location.name}\n🔥 НОВЫЙ ЗАКАЗ #${orderId}\n👤 Клиент: ${clientInfo}\n\nСостав:\n${details}${commentText}\n\nСумма: ${total} руб.\n⏰ К времени: ${time.replace('T', ' ')}`, 
-                            { reply_markup: { inline_keyboard: [[ { text: "👨‍🍳 Открыть панель кухни", url: `${WEBAPP_URL}/kitchen.html` } ]] } }
-                        ).catch(err => console.error('[Telegram Bot] Ошибка отправки заказа в чат кухни. Проверьте KITCHEN_CHAT_ID и права бота:', err.message));
+                        const commentText = comment ? `\n💬 Комментарий: ${escapeHtml(comment)}` : '';
+                        const inlineKeyboard = [
+                            [{ text: "👨‍🍳 Открыть панель кухни", url: `${WEBAPP_URL}/kitchen.html` }]
+                        ];
+                        if (isValidUsername) {
+                            inlineKeyboard.push([{ text: `💬 Написать @${cleanUsername}`, url: `https://t.me/${cleanUsername}` }]);
+                        }
+
+                        const orderMsg = `📍 Точка: <b>${escapeHtml(location.name)}</b>\n🔥 <b>НОВЫЙ ЗАКАЗ #${orderId}</b>\n👤 Клиент: ${clientInfo}\n\nСостав:\n${escapeHtml(details)}${commentText}\n\nСумма: <b>${total} руб.</b>\n⏰ К времени: <b>${time.replace('T', ' ')}</b>`;
+
+                        bot.sendMessage(KITCHEN_CHAT_ID, orderMsg, {
+                            parse_mode: 'HTML',
+                            reply_markup: { inline_keyboard: inlineKeyboard }
+                        }).catch(err => console.error('[Telegram Bot] Ошибка отправки заказа в чат кухни. Проверьте KITCHEN_CHAT_ID и права бота:', err.message));
                         
                         if (tg_id !== 'test_user' && !String(tg_id).startsWith('web_')) {
                             bot.sendMessage(tg_id, `Ваш заказ принят. Его номер #${orderId}`).catch(err => console.error('[Telegram Bot] Ошибка отправки подтверждения клиенту:', err.message));

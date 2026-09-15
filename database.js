@@ -1,5 +1,6 @@
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./database.sqlite');
+const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'));
 
 db.serialize(() => {
     // Включаем режим WAL для высокой производительности (много потоков чтения + 1 запись)

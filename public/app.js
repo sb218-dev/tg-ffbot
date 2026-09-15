@@ -56,8 +56,12 @@ let currentItemSelection = null;
 let currentStep = 'locations';
 let isSubmittingOrder = false;
 
-let tgUserId = tg.initDataUnsafe?.user?.id;
-let tgUsername = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || '';
+const tgUser = tg.initDataUnsafe?.user;
+let tgUserId = tgUser?.id;
+let tgUsername = tgUser?.username || '';
+let tgFirstName = tgUser?.first_name || '';
+let tgLastName = tgUser?.last_name || '';
+let tgFullName = [tgFirstName, tgLastName].filter(Boolean).join(' ') || tgUsername || 'Клиент';
 
 if (!tgUserId) {
     tgUserId = sessionStorage.getItem('webUserId');
@@ -141,7 +145,7 @@ function addMarkers() {
 if (isTelegram || isDebug) {
     Promise.all([
         fetch('/api/locations?v=' + new Date().getTime()).then(res => res.json()),
-        fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tg_id: tgUserId, username: tgUsername }) }).then(res => res.json())
+        fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tg_id: tgUserId, username: tgUsername, full_name: tgFullName }) }).then(res => res.json())
     ]).then(([locations, user]) => {
         locationsData = locations;
         userData = user;
@@ -557,6 +561,7 @@ function submitOrder() {
             location_id: currentLocation.id, 
             tg_id: tgUserId, 
             username: tgUsername, 
+            full_name: tgFullName,
             items: items, 
             time: selectedTime, 
             comment: comment 
