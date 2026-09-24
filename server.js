@@ -28,13 +28,19 @@ process.on('uncaughtException', (err) => {
 
 const botOptions = { polling: true };
 if (config.PROXY_URL) {
-    if (config.PROXY_URL.startsWith('socks')) {
-        const agent = new SocksProxyAgent(config.PROXY_URL);
+    let proxyUrl = String(config.PROXY_URL).trim();
+    if (!proxyUrl.startsWith('socks') && !proxyUrl.startsWith('http://') && !proxyUrl.startsWith('https://')) {
+        proxyUrl = 'socks5://' + proxyUrl;
+    }
+
+    if (proxyUrl.startsWith('socks')) {
+        const agent = new SocksProxyAgent(proxyUrl);
         botOptions.request = { agent: agent };
     } else {
-        botOptions.request = { proxy: config.PROXY_URL }; // Нативная поддержка HTTP-прокси
+        botOptions.request = { proxy: proxyUrl }; // Нативная поддержка HTTP-прокси
     }
-    console.log(`🌐 Бот использует прокси: ${config.PROXY_URL}`);
+    const maskedProxy = proxyUrl.replace(/:([^:@]+)@/, ':****@');
+    console.log(`🌐 Бот использует прокси: ${maskedProxy}`);
 }
 
 // Альтернативный способ: Проксирование самого API Телеграма (например, через Cloudflare)
